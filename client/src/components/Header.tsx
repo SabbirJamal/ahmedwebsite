@@ -17,6 +17,15 @@ type Profile = {
   is_seller: boolean;
 };
 
+type AuthUser = {
+  email?: string;
+  id: string;
+  user_metadata?: {
+    full_name?: string;
+    name?: string;
+  };
+};
+
 type NotificationItem = {
   id: string;
   booking_id: string | null;
@@ -29,6 +38,7 @@ type NotificationItem = {
 export function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [notificationCount, setNotificationCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -49,19 +59,24 @@ export function Header() {
 
       if (!user) {
         if (isMounted) {
+          setAuthUser(null);
           setProfile(null);
         }
         return;
       }
 
-      const { data } = await supabase
+      if (isMounted) {
+        setAuthUser(user);
+      }
+
+      const { data, error: profileError } = await supabase
         .from('profiles')
         .select('full_name, is_buyer, is_seller')
         .eq('id', user.id)
         .single();
 
       if (isMounted) {
-        setProfile(data);
+        setProfile(profileError ? null : data);
       }
 
       const {
@@ -118,6 +133,7 @@ export function Header() {
 
   async function handleSignOut() {
     await supabase?.auth.signOut();
+    setAuthUser(null);
     setProfile(null);
     setIsProfileOpen(false);
     window.location.assign('/');
@@ -157,7 +173,7 @@ export function Header() {
         <a href="/sell">Sell Equipments/Transport</a>
       </nav>
 
-      {profile && (
+      {authUser && (
         <nav className="user-shortcuts" aria-label="User shortcuts">
           <button
             className="notification-link"
@@ -184,7 +200,7 @@ export function Header() {
         </nav>
       )}
 
-      {profile && isNotificationsOpen && (
+      {authUser && isNotificationsOpen && (
         <div className="header-notifications" role="menu">
           <h2>Notifications</h2>
           {notifications.length === 0 && <p>No notifications yet.</p>}
@@ -209,17 +225,17 @@ export function Header() {
         <button
           aria-expanded={isProfileOpen}
           aria-label="Open profile menu"
-          className={`profile-button ${profile ? 'profile-button-active' : ''}`}
+          className={`profile-button ${authUser ? 'profile-button-active' : ''}`}
           type="button"
           onClick={() => setIsProfileOpen((isOpen) => !isOpen)}
         >
           <span>
             <User aria-hidden="true" />
           </span>
-          {profile && <ChevronDown aria-hidden="true" />}
+          {authUser && <ChevronDown aria-hidden="true" />}
         </button>
 
-        {isProfileOpen && !profile && (
+        {isProfileOpen && !authUser && (
           <div className="profile-menu" role="menu">
             <p>Register or login to access everything</p>
             <a href="/register" role="menuitem">
@@ -231,16 +247,16 @@ export function Header() {
           </div>
         )}
 
-        {isProfileOpen && profile && (
+        {isProfileOpen && authUser && (
           <div className="profile-menu account-menu" role="menu">
             <div className="account-summary">
-              <strong>{profile.full_name}</strong>
-              <span>{profile.is_seller ? 'Seller Account' : 'Buyer Account'}</span>
+              <strong>{profile?.full_name || getFallbackName(authUser)}</strong>
+              <span>{profile?.is_seller ? 'Seller Account' : 'Buyer Account'}</span>
             </div>
             <a href="/account" role="menuitem">
               Account Settings
             </a>
-            <a href={profile.is_seller ? '/seller' : '/listings'} role="menuitem">
+            <a href={profile?.is_seller ? '/seller' : '/listings'} role="menuitem">
               <Box aria-hidden="true" />
               My Listings
             </a>
@@ -254,7 +270,7 @@ export function Header() {
             </a>
             <a
               className="seller-switch"
-              href={isSellerSide ? '/' : profile.is_seller ? '/seller' : '/become-seller'}
+              href={isSellerSide ? '/' : profile?.is_seller ? '/seller' : '/become-seller'}
               role="menuitem"
             >
               {isSellerSide ? 'Switch to Buyer' : 'Switch to Seller'}
@@ -268,6 +284,10 @@ export function Header() {
       </div>
     </header>
   );
+}
+
+function getFallbackName(user: AuthUser) {
+  return user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'Account';
 }
 
 function formatRelativeTime(value: string) {

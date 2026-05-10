@@ -106,7 +106,7 @@ export function LoginPage() {
                 <ShieldCheck aria-hidden="true" />
               </span>
               <p>Welcome back</p>
-              <h2>Sign in to Equipara</h2>
+              <h2>Sign in to Trex-O</h2>
             </div>
 
             <label className="field">

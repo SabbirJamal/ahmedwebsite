@@ -207,7 +207,7 @@ export function ListingDetailPage({ listingId }: { listingId: string }) {
             <div>
               <p>
                 <Building2 aria-hidden="true" />
-                <strong>{listing.seller_profiles?.company_name || 'Equipara Seller'}</strong>
+                <strong>{listing.seller_profiles?.company_name || 'Trex-O Seller'}</strong>
               </p>
               <p>
                 <MapPin aria-hidden="true" />

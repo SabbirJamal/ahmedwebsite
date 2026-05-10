@@ -236,7 +236,7 @@ export function SearchPage() {
                   </div>
                   <div className="result-card-body">
                     <h2>{listing.name}</h2>
-                    <p>{listing.seller_profiles?.company_name || 'Equipara Seller'}</p>
+                    <p>{listing.seller_profiles?.company_name || 'Trex-O Seller'}</p>
                     <div className="result-meta">
                       <span>
                         <MapPin aria-hidden="true" />

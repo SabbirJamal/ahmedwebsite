@@ -164,8 +164,8 @@ export function Header() {
   return (
     <header className="site-header">
       <a className="brand" href="/">
-        <span>Equip</span>
-        <span>ara</span>
+        <span>Trex</span>
+        <span>-O</span>
       </a>
 
       <nav className="main-nav" aria-label="Main navigation">

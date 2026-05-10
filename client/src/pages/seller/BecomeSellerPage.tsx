@@ -59,7 +59,7 @@ export function BecomeSellerPage() {
           <h1>Start selling equipment and transport services.</h1>
           <p>
             Add your company details and commercial registration information to
-            unlock seller tools on Equipara.
+            unlock seller tools on Trex-O.
           </p>
         </div>
 

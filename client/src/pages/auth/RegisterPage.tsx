@@ -39,7 +39,7 @@ export function RegisterPage() {
             <span className="register-kicker">Supplier and buyer access</span>
             <h1>Build your construction business network across the region.</h1>
             <p>
-              Create your Equipara account to rent, purchase, sell, and move
+              Create your Trex-O account to rent, purchase, sell, and move
               construction equipment with trusted companies.
             </p>
             <div className="register-stats" aria-hidden="true">
@@ -128,7 +128,7 @@ export function RegisterPage() {
           >
             <div className="register-heading">
               <p>Create Account</p>
-              <h2>Register with Equipara</h2>
+              <h2>Register with Trex-O</h2>
             </div>
 
             <label className="register-field">

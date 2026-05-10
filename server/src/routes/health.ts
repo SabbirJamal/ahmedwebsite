@@ -6,7 +6,7 @@ export const healthRouter = Router();
 healthRouter.get('/', (_request, response) => {
   response.json({
     ok: true,
-    service: 'Ahmed Construction B2B API',
+    service: 'Trex-O API',
     supabaseConfigured: Boolean(supabase),
   });
 });

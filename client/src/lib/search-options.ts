@@ -1,0 +1,51 @@
+export const brandOptions = [
+  'Any Brand',
+  'Caterpillar',
+  'Komatsu',
+  'Liebherr',
+  'XCMG',
+  'Sany',
+  'Zoomlion',
+  'Hitachi',
+  'Volvo',
+  'JCB',
+  'Toyota',
+  'Hyster',
+  'Doosan',
+  'Manitou',
+  'Genie',
+  'JLG',
+  'Mercedes-Benz',
+  'MAN',
+  'Scania',
+  'Volvo Trucks',
+  'Isuzu',
+  'Mitsubishi Fuso',
+  'Hyundai',
+];
+
+export const omanLocations = [
+  'Any Location',
+  'Muscat',
+  'Seeb',
+  'Bawshar',
+  'Muttrah',
+  'Salalah',
+  'Sohar',
+  'Nizwa',
+  'Sur',
+  'Ibri',
+  'Buraimi',
+  'Khasab',
+  'Duqm',
+  'Rustaq',
+  'Ibra',
+  'Samail',
+];
+
+export const yearOptions = [
+  'Any Year',
+  ...Array.from({ length: 41 }, (_, index) =>
+    String(new Date().getFullYear() + 1 - index),
+  ),
+];

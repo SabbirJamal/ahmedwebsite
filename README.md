@@ -33,6 +33,60 @@ A fresh TypeScript React + Node website for a B2B construction marketplace.
 
 The frontend runs on `http://localhost:5173` and proxies API calls to the backend on `http://localhost:4000`.
 
+## Environment Setup
+
+### Local frontend: `client/.env`
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
+VITE_API_URL=http://localhost:4000
+```
+
+### Local backend: `server/.env`
+
+```env
+PORT=4000
+CLIENT_ORIGINS=http://localhost:5173
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_secret_service_role_key
+```
+
+### Vercel frontend environment variables
+
+Set these in **Vercel > Project Settings > Environment Variables**:
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
+VITE_API_URL=https://your-production-backend-domain.com
+```
+
+Do not use `http://localhost:4000` in Vercel. The browser runs on the user's device, so `localhost` would point to the user's computer, not your backend.
+
+### Production backend environment variables
+
+Set these wherever the backend is hosted:
+
+```env
+PORT=4000
+CLIENT_ORIGINS=https://your-vercel-domain.vercel.app,https://your-custom-domain.com
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_secret_service_role_key
+```
+
+`CLIENT_ORIGINS` is comma-separated so local, Vercel preview, and custom domains can be allowed without code changes.
+
+## Production Notes
+
+- Frontend-only Vercel deploys cannot serve the Express API in `server/`.
+- The frontend calls API routes through `VITE_API_URL`.
+- In local development, `VITE_API_URL=http://localhost:4000`.
+- In production, `VITE_API_URL` must be the public HTTPS URL of the deployed backend.
+- Vercel SPA routing is handled by `client/vercel.json`, which rewrites all frontend routes to `index.html`.
+
 ## Supabase Setup
 
 1. Create a Supabase project.

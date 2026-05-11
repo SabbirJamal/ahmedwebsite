@@ -7,6 +7,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Header } from '../../components/Header';
+import { apiFetch } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 
 export function BecomeSellerPage() {
@@ -15,7 +16,6 @@ export function BecomeSellerPage() {
   const [statusMessage, setStatusMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   useEffect(() => {
     async function loadProfileDefaults() {
@@ -89,7 +89,7 @@ export function BecomeSellerPage() {
             setIsSubmitting(true);
 
             try {
-              const response = await fetch(`${apiUrl}/api/sellers/profile`, {
+              const response = await apiFetch('/api/sellers/profile', {
                 method: 'POST',
                 headers: {
                   Authorization: `Bearer ${session.access_token}`,

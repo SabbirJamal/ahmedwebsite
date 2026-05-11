@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ImagePlus, Send, X } from 'lucide-react';
 import { Header } from '../../../components/Header';
+import { apiFetch } from '../../../lib/api';
 import { fleetTypes, type FleetCategory } from '../../../lib/fleet-options';
 import { supabase } from '../../../lib/supabase';
 import {
@@ -40,7 +41,6 @@ export function SellerRfqPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSendingOffer, setIsSendingOffer] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const loadRfqs = useCallback(async () => {
     if (!supabase) {
@@ -59,7 +59,7 @@ export function SellerRfqPage() {
     }
 
     try {
-      const response = await fetch(`${apiUrl}/api/rfqs/open`, {
+      const response = await apiFetch('/api/rfqs/open', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -79,7 +79,7 @@ export function SellerRfqPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [apiUrl]);
+  }, []);
 
   useEffect(() => {
     void loadRfqs();
@@ -134,7 +134,7 @@ export function SellerRfqPage() {
     try {
       uploadedPhotos = await uploadRfqQuotePhotos(photoFiles, session.user.id);
 
-      const response = await fetch(`${apiUrl}/api/rfqs/${activeRfq.id}/quotes`, {
+      const response = await apiFetch(`/api/rfqs/${activeRfq.id}/quotes`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${session.access_token}`,

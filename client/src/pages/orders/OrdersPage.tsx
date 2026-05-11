@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, CalendarDays, MapPin, Phone, User } from 'lucide-react';
 import { Header } from '../../components/Header';
+import { apiFetch } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 
 type OrderStatus =
@@ -46,7 +47,6 @@ export function OrdersPage() {
   const [activeBucket, setActiveBucket] = useState<'pending' | 'history'>('pending');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const loadOrders = useCallback(async () => {
     if (!supabase) {
@@ -65,7 +65,7 @@ export function OrdersPage() {
     }
 
     try {
-      const response = await fetch(`${apiUrl}/api/bookings/orders`, {
+      const response = await apiFetch('/api/bookings/orders', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -93,7 +93,7 @@ export function OrdersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [apiUrl]);
+  }, []);
 
   useEffect(() => {
     void loadOrders();
@@ -116,7 +116,7 @@ export function OrdersPage() {
     setErrorMessage('');
 
     try {
-      const response = await fetch(`${apiUrl}/api/bookings/${orderId}/status`, {
+      const response = await apiFetch(`/api/bookings/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${session.access_token}`,

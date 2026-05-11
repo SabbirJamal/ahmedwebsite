@@ -15,7 +15,14 @@ export const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: env.clientOrigin,
+    origin(origin, callback) {
+      if (!origin || env.clientOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS blocked origin: ${origin}`));
+    },
   }),
 );
 app.use(express.json());

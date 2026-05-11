@@ -13,6 +13,7 @@ import {
   User,
 } from 'lucide-react';
 import { Header } from '../../components/Header';
+import { apiFetch } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import { middleEastCountries } from './countries';
 
@@ -27,7 +28,6 @@ export function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const passwordsDoNotMatch =
     confirmPassword.length > 0 && password !== confirmPassword;
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   return (
     <main className="app-shell register-shell">
@@ -77,7 +77,7 @@ export function RegisterPage() {
               setIsSubmitting(true);
 
               try {
-                const response = await fetch(`${apiUrl}/api/auth/register`, {
+                const response = await apiFetch('/api/auth/register', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',

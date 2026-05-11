@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { Header } from '../../components/Header';
+import { apiFetch } from '../../lib/api';
 import {
   fleetTypes,
   specOptions,
@@ -75,7 +76,6 @@ export function RfqPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [updatingQuoteId, setUpdatingQuoteId] = useState('');
   const [updatingRfqId, setUpdatingRfqId] = useState('');
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const loadRfqs = useCallback(async () => {
     if (!supabase) {
@@ -108,7 +108,7 @@ export function RfqPage() {
     }
 
     try {
-      const response = await fetch(`${apiUrl}/api/rfqs`, {
+      const response = await apiFetch('/api/rfqs', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -128,7 +128,7 @@ export function RfqPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [apiUrl]);
+  }, []);
 
   useEffect(() => {
     void loadRfqs();
@@ -242,7 +242,7 @@ export function RfqPage() {
     setIsSaving(true);
 
     try {
-      const response = await fetch(`${apiUrl}/api/rfqs`, {
+      const response = await apiFetch('/api/rfqs', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -303,7 +303,7 @@ export function RfqPage() {
     setUpdatingQuoteId(quoteId);
 
     try {
-      const response = await fetch(`${apiUrl}/api/rfqs/quotes/${quoteId}/status`, {
+      const response = await apiFetch(`/api/rfqs/quotes/${quoteId}/status`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -379,7 +379,7 @@ export function RfqPage() {
     setUpdatingRfqId(rfqId);
 
     try {
-      const response = await fetch(`${apiUrl}/api/rfqs/${rfqId}/status`, {
+      const response = await apiFetch(`/api/rfqs/${rfqId}/status`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${session.access_token}`,

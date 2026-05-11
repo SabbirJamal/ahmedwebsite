@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Edit3, MapPin, Trash2 } from 'lucide-react';
 import { Header } from '../../components/Header';
+import { apiFetch } from '../../lib/api';
 import { fleetTypes } from '../../lib/fleet-options';
 import { supabase } from '../../lib/supabase';
 import type { SellerListing } from './types';
@@ -9,7 +10,6 @@ export function SellerPage() {
   const [listings, setListings] = useState<SellerListing[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   useEffect(() => {
     async function loadListings() {
@@ -29,7 +29,7 @@ export function SellerPage() {
       }
 
       try {
-        const response = await fetch(`${apiUrl}/api/fleet/listings/mine`, {
+        const response = await apiFetch('/api/fleet/listings/mine', {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
@@ -54,7 +54,7 @@ export function SellerPage() {
     }
 
     void loadListings();
-  }, [apiUrl]);
+  }, []);
 
   async function updateListingStatus(listingId: string, isActive: boolean) {
     if (!supabase) {
@@ -78,8 +78,8 @@ export function SellerPage() {
     );
 
     try {
-      const response = await fetch(
-        `${apiUrl}/api/fleet/listings/${listingId}/status`,
+      const response = await apiFetch(
+        `/api/fleet/listings/${listingId}/status`,
         {
           method: 'PATCH',
           headers: {

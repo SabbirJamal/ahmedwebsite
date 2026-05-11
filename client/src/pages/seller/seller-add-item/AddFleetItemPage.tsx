@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Camera, ChevronDown, Truck } from 'lucide-react';
 import { Header } from '../../../components/Header';
+import { apiFetch } from '../../../lib/api';
 import {
   fleetTypes,
   specOptions,
@@ -21,7 +22,6 @@ export function AddFleetItemPage() {
   const [statusMessage, setStatusMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
   const categoryTypes = fleetTypes.filter((item) => item.category === category);
   const selectedSpecs = subType ? specOptions[subType] || [] : [];
 
@@ -90,7 +90,7 @@ export function AddFleetItemPage() {
               );
 
               try {
-                const response = await fetch(`${apiUrl}/api/fleet/listings`, {
+                const response = await apiFetch('/api/fleet/listings', {
                   method: 'POST',
                   headers: {
                     Authorization: `Bearer ${session.access_token}`,

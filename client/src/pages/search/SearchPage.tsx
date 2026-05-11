@@ -6,6 +6,7 @@ import {
   specOptions,
   type FleetCategory,
 } from '../../lib/fleet-options';
+import { apiFetch } from '../../lib/api';
 import { brandOptions, omanLocations, yearOptions } from '../../lib/search-options';
 
 type SearchListing = {
@@ -38,7 +39,6 @@ export function SearchPage() {
   const [listings, setListings] = useState<SearchListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
   const visibleTypes = fleetTypes.filter((item) => item.category === category);
   const selectedSpecs = selectedType ? specOptions[selectedType] || [] : [];
 
@@ -55,7 +55,7 @@ export function SearchPage() {
           query.set('type', selectedType);
         }
 
-        const response = await fetch(`${apiUrl}/api/fleet/listings?${query}`);
+        const response = await apiFetch(`/api/fleet/listings?${query}`);
         const result = (await response.json()) as {
           listings?: SearchListing[];
           message?: string;
@@ -76,7 +76,7 @@ export function SearchPage() {
     }
 
     void loadListings();
-  }, [apiUrl, category, selectedType]);
+  }, [category, selectedType]);
 
   const filteredListings = useMemo(
     () =>

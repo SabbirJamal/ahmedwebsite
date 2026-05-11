@@ -8,6 +8,7 @@ import {
   X,
 } from 'lucide-react';
 import { Header } from '../../components/Header';
+import { apiFetch } from '../../lib/api';
 import { fleetTypes, specOptions } from '../../lib/fleet-options';
 import { supabase } from '../../lib/supabase';
 
@@ -62,12 +63,11 @@ export function ListingDetailPage({ listingId }: { listingId: string }) {
   const [bookingMessage, setBookingMessage] = useState('');
   const [isSendingBooking, setIsSendingBooking] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   useEffect(() => {
     async function loadListing() {
       try {
-        const response = await fetch(`${apiUrl}/api/fleet/listings/${listingId}`);
+        const response = await apiFetch(`/api/fleet/listings/${listingId}`);
         const result = (await response.json()) as {
           listing?: ListingDetail;
           message?: string;
@@ -88,7 +88,7 @@ export function ListingDetailPage({ listingId }: { listingId: string }) {
     }
 
     void loadListing();
-  }, [apiUrl, listingId]);
+  }, [listingId]);
 
   if (isLoading) {
     return (
@@ -292,7 +292,7 @@ export function ListingDetailPage({ listingId }: { listingId: string }) {
               setIsSendingBooking(true);
 
               try {
-                const response = await fetch(`${apiUrl}/api/bookings`, {
+                const response = await apiFetch('/api/bookings', {
                   method: 'POST',
                   headers: {
                     Authorization: `Bearer ${session.access_token}`,

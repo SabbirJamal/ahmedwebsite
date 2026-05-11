@@ -9,6 +9,7 @@ import {
   Package,
   User,
 } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 import { supabase } from '../lib/supabase';
 
 type Profile = {
@@ -43,7 +44,6 @@ export function Header() {
   const [notificationCount, setNotificationCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const isSellerSide = window.location.pathname.startsWith('/seller');
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   useEffect(() => {
     let isMounted = true;
@@ -84,7 +84,7 @@ export function Header() {
       } = await supabase.auth.getSession();
 
       if (session) {
-        const response = await fetch(`${apiUrl}/api/bookings/notifications/count`, {
+        const response = await apiFetch('/api/bookings/notifications/count', {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
@@ -98,7 +98,7 @@ export function Header() {
           }
         }
 
-        const notificationsResponse = await fetch(`${apiUrl}/api/bookings/notifications`, {
+        const notificationsResponse = await apiFetch('/api/bookings/notifications', {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
@@ -129,7 +129,7 @@ export function Header() {
       isMounted = false;
       subscription?.unsubscribe();
     };
-  }, [apiUrl]);
+  }, []);
 
   async function handleSignOut() {
     await supabase?.auth.signOut();
@@ -150,7 +150,7 @@ export function Header() {
     } = await supabase.auth.getSession();
 
     if (session) {
-      await fetch(`${apiUrl}/api/bookings/notifications/${notification.id}/read`, {
+      await apiFetch(`/api/bookings/notifications/${notification.id}/read`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${session.access_token}`,

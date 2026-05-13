@@ -53,25 +53,25 @@ SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_secret_service_role_key
 ```
 
-### Vercel frontend environment variables
+### AWS Amplify frontend environment variables
 
-Set these in **Vercel > Project Settings > Environment Variables**:
+Set these in **AWS Amplify > App settings > Environment variables**:
 
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
-VITE_API_URL=https://your-production-backend-domain.com
+VITE_API_URL=https://ahmedwebsite.onrender.com
 ```
 
-Do not use `http://localhost:4000` in Vercel. The browser runs on the user's device, so `localhost` would point to the user's computer, not your backend.
+Do not use `http://localhost:4000` in production. The browser runs on the user's device, so `localhost` would point to the user's computer, not your backend.
 
-### Production backend environment variables
+### Render backend environment variables
 
-Set these wherever the backend is hosted:
+Set these in **Render > Service > Environment**:
 
 ```env
 PORT=4000
-CLIENT_ORIGINS=https://your-vercel-domain.vercel.app,https://your-custom-domain.com
+CLIENT_ORIGINS=https://main.d3is95lircvzr0.amplifyapp.com,https://trex-o.com,https://www.trex-o.com
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_supabase_publishable_or_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_secret_service_role_key
@@ -85,7 +85,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_secret_service_role_key
 - The frontend calls API routes through `VITE_API_URL`.
 - In local development, `VITE_API_URL=http://localhost:4000`.
 - In production, `VITE_API_URL` must be the public HTTPS URL of the deployed backend.
-- Vercel SPA routing is handled by `client/vercel.json`, which rewrites all frontend routes to `index.html`.
+- AWS Amplify SPA routing is handled by `client/amplify.yml`, which rewrites frontend routes to `index.html`.
 
 ## Supabase Setup
 

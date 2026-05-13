@@ -12,7 +12,7 @@ export function getApiBaseUrl() {
   }
 
   throw new Error(
-    'Production API URL is not configured. Add VITE_API_URL in Vercel and redeploy.',
+    'Production API URL is not configured. Add VITE_API_URL in your hosting environment and redeploy.',
   );
 }
 

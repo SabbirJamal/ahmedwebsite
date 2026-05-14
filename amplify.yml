@@ -17,6 +17,21 @@ applications:
         paths:
           - node_modules/**/*
       customRules:
+        - source: /login/
+          target: /login
+          status: '301'
+        - source: /register/
+          target: /register
+          status: '301'
+        - source: /search/
+          target: /search
+          status: '301'
+        - source: /seller/
+          target: /seller
+          status: '301'
+        - source: /dashboard/
+          target: /dashboard
+          status: '301'
         - source: </^[^.]+$|\.(?!(css|gif|ico|jpg|jpeg|js|png|txt|svg|woff|woff2|ttf|map|json|webp|mp4)$)([^.]+$)/>
           target: /index.html
           status: '200'

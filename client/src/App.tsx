@@ -3,6 +3,7 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
   useParams,
 } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
@@ -34,7 +35,7 @@ export function App() {
         <Route element={<SellerPage />} path="/dashboard" />
         <Route element={<AddFleetItemPage />} path="/seller/add-item" />
         <Route element={<SellerRfqPage />} path="/seller/rfq" />
-        <Route element={<Navigate replace to="/" />} path="*" />
+        <Route element={<TrailingSlashRedirect />} path="*" />
       </Routes>
     </BrowserRouter>
   );
@@ -44,4 +45,19 @@ function ListingDetailRoute() {
   const { listingId = '' } = useParams();
 
   return <ListingDetailPage listingId={listingId} />;
+}
+
+function TrailingSlashRedirect() {
+  const location = useLocation();
+
+  if (location.pathname.length > 1 && location.pathname.endsWith('/')) {
+    return (
+      <Navigate
+        replace
+        to={`${location.pathname.replace(/\/+$/, '')}${location.search}${location.hash}`}
+      />
+    );
+  }
+
+  return <Navigate replace to="/" />;
 }

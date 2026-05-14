@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   Building2,
@@ -18,6 +19,7 @@ import { supabase } from '../../lib/supabase';
 import { middleEastCountries } from './countries';
 
 export function RegisterPage() {
+  const navigate = useNavigate();
   const [selectedCountry, setSelectedCountry] = useState(middleEastCountries[0]);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -114,7 +116,7 @@ export function RegisterPage() {
                 setPassword('');
                 setConfirmPassword('');
                 setSelectedCountry(middleEastCountries[0]);
-                window.location.assign('/');
+                navigate('/');
               } catch (error) {
                 setErrorMessage(
                   error instanceof Error
@@ -277,8 +279,8 @@ export function RegisterPage() {
             <label className="terms-option">
               <input name="terms" required type="checkbox" />
               <span>
-                I agree to the <a href="/terms">Terms of Service</a> and{' '}
-                <a href="/privacy">Privacy Policy</a>.
+                I agree to the <Link to="/terms">Terms of Service</Link> and{' '}
+                <Link to="/privacy">Privacy Policy</Link>.
               </span>
             </label>
 
@@ -291,7 +293,7 @@ export function RegisterPage() {
             {statusMessage && <p className="form-message success">{statusMessage}</p>}
 
             <p className="login-link">
-              Already have an account? <a href="/login">Sign In</a>
+              Already have an account? <Link to="/login">Sign In</Link>
             </p>
           </form>
         </div>

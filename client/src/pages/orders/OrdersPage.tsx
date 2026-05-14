@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, CalendarDays, MapPin, Phone, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../../components/Header';
 import { apiFetch } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
@@ -41,6 +42,7 @@ type Order = {
 };
 
 export function OrdersPage() {
+  const navigate = useNavigate();
   const [activeView, setActiveView] = useState<'my' | 'incoming'>('incoming');
   const [myOrders, setMyOrders] = useState<Order[]>([]);
   const [incomingOrders, setIncomingOrders] = useState<Order[]>([]);
@@ -60,7 +62,7 @@ export function OrdersPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      window.location.assign('/login');
+      navigate('/login');
       return;
     }
 
@@ -93,7 +95,7 @@ export function OrdersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     void loadOrders();
@@ -109,7 +111,7 @@ export function OrdersPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      window.location.assign('/login');
+      navigate('/login');
       return;
     }
 

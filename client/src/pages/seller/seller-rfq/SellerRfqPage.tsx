@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ImagePlus, Send, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../../../components/Header';
 import { apiFetch } from '../../../lib/api';
 import { fleetTypes, type FleetCategory } from '../../../lib/fleet-options';
@@ -33,6 +34,7 @@ type SellerRfqItem = {
 };
 
 export function SellerRfqPage() {
+  const navigate = useNavigate();
   const [rfqs, setRfqs] = useState<SellerRfqItem[]>([]);
   const [activeRfq, setActiveRfq] = useState<SellerRfqItem | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -54,7 +56,7 @@ export function SellerRfqPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      window.location.assign('/login');
+      navigate('/login');
       return;
     }
 
@@ -79,7 +81,7 @@ export function SellerRfqPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     void loadRfqs();
@@ -124,7 +126,7 @@ export function SellerRfqPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      window.location.assign('/login');
+      navigate('/login');
       return;
     }
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../../components/Header';
 import { apiFetch } from '../../lib/api';
 import {
@@ -69,6 +70,7 @@ const gccCountryOptions = [
 ];
 
 export function RfqPage() {
+  const navigate = useNavigate();
   const [rfqs, setRfqs] = useState<RfqItem[]>([]);
   const [profile, setProfile] = useState<ProfileSnapshot | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,7 +99,7 @@ export function RfqPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      window.location.assign('/login');
+      navigate('/login');
       return;
     }
 
@@ -136,7 +138,7 @@ export function RfqPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     void loadRfqs();
@@ -248,7 +250,7 @@ export function RfqPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      window.location.assign('/login');
+      navigate('/login');
       return;
     }
 
@@ -331,7 +333,7 @@ export function RfqPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      window.location.assign('/login');
+      navigate('/login');
       return;
     }
 
@@ -407,7 +409,7 @@ export function RfqPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      window.location.assign('/login');
+      navigate('/login');
       return;
     }
 

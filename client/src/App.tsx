@@ -1,3 +1,10 @@
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useParams,
+} from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
@@ -11,47 +18,30 @@ import { AddFleetItemPage } from './pages/seller/seller-add-item/AddFleetItemPag
 import { SellerRfqPage } from './pages/seller/seller-rfq/SellerRfqPage';
 
 export function App() {
-  const pathname = window.location.pathname;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route element={<HomePage />} path="/" />
+        <Route element={<LoginPage />} path="/login" />
+        <Route element={<RegisterPage />} path="/register" />
+        <Route element={<BecomeSellerPage />} path="/become-seller" />
+        <Route element={<SearchPage />} path="/search" />
+        <Route element={<OrdersPage />} path="/orders" />
+        <Route element={<OrdersPage />} path="/seller/orders" />
+        <Route element={<RfqPage />} path="/rfq" />
+        <Route element={<ListingDetailRoute />} path="/listing/:listingId" />
+        <Route element={<SellerPage />} path="/seller" />
+        <Route element={<SellerPage />} path="/dashboard" />
+        <Route element={<AddFleetItemPage />} path="/seller/add-item" />
+        <Route element={<SellerRfqPage />} path="/seller/rfq" />
+        <Route element={<Navigate replace to="/" />} path="*" />
+      </Routes>
+    </BrowserRouter>
+  );
+}
 
-  if (pathname === '/login') {
-    return <LoginPage />;
-  }
+function ListingDetailRoute() {
+  const { listingId = '' } = useParams();
 
-  if (pathname === '/register') {
-    return <RegisterPage />;
-  }
-
-  if (pathname === '/become-seller') {
-    return <BecomeSellerPage />;
-  }
-
-  if (pathname === '/search') {
-    return <SearchPage />;
-  }
-
-  if (pathname === '/orders' || pathname === '/seller/orders') {
-    return <OrdersPage />;
-  }
-
-  if (pathname === '/rfq') {
-    return <RfqPage />;
-  }
-
-  if (pathname.startsWith('/listing/')) {
-    return <ListingDetailPage listingId={pathname.replace('/listing/', '')} />;
-  }
-
-  if (pathname === '/seller') {
-    return <SellerPage />;
-  }
-
-  if (pathname === '/seller/add-item') {
-    return <AddFleetItemPage />;
-  }
-
-  if (pathname === '/seller/rfq') {
-    return <SellerRfqPage />;
-  }
-
-  return <HomePage />;
+  return <ListingDetailPage listingId={listingId} />;
 }

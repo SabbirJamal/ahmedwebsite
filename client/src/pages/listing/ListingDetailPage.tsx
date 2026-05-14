@@ -7,6 +7,7 @@ import {
   Phone,
   X,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Header } from '../../components/Header';
 import { apiFetch } from '../../lib/api';
 import { fleetTypes, specOptions } from '../../lib/fleet-options';
@@ -239,7 +240,7 @@ export function ListingDetailPage({ listingId }: { listingId: string }) {
           <div aria-modal="true" className="login-prompt" role="dialog">
             <h2>You need to log in to request order.</h2>
             <div className="login-prompt-actions">
-              <a href="/login">Login</a>
+              <Link to="/login">Login</Link>
               <button type="button" onClick={() => setIsLoginPromptOpen(false)}>
                 Cancel
               </button>

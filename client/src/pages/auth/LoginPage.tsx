@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   CheckCircle2,
@@ -12,6 +13,7 @@ import { Header } from '../../components/Header';
 import { supabase } from '../../lib/supabase';
 
 export function LoginPage() {
+  const navigate = useNavigate();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -91,7 +93,7 @@ export function LoginPage() {
                     ? `Signed in successfully. Welcome, ${profile.full_name}.`
                     : 'Signed in successfully.',
                 );
-                window.location.assign('/');
+                navigate('/');
               } catch (error) {
                 setErrorMessage(
                   error instanceof Error ? error.message : 'Could not sign in.',
@@ -149,7 +151,7 @@ export function LoginPage() {
                 <input name="remember" type="checkbox" />
                 <span>Remember me</span>
               </label>
-              <a href="/forgot-password">Forgot password?</a>
+              <Link to="/forgot-password">Forgot password?</Link>
             </div>
 
             <button className="login-submit" disabled={isSubmitting} type="submit">
@@ -161,7 +163,7 @@ export function LoginPage() {
             {statusMessage && <p className="form-message success">{statusMessage}</p>}
 
             <p className="signup-text">
-              Don't have an account? <a href="/register">Create Account</a>
+              Don't have an account? <Link to="/register">Create Account</Link>
             </p>
           </form>
         </div>

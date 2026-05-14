@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Edit3, MapPin, Trash2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '../../components/Header';
 import { apiFetch } from '../../lib/api';
 import { fleetTypes } from '../../lib/fleet-options';
@@ -7,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import type { SellerListing } from './types';
 
 export function SellerPage() {
+  const navigate = useNavigate();
   const [listings, setListings] = useState<SellerListing[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -24,7 +26,7 @@ export function SellerPage() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        window.location.assign('/login');
+        navigate('/login');
         return;
       }
 
@@ -54,7 +56,7 @@ export function SellerPage() {
     }
 
     void loadListings();
-  }, []);
+  }, [navigate]);
 
   async function updateListingStatus(listingId: string, isActive: boolean) {
     if (!supabase) {
@@ -66,7 +68,7 @@ export function SellerPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      window.location.assign('/login');
+      navigate('/login');
       return;
     }
 
@@ -111,10 +113,10 @@ export function SellerPage() {
             <h1>My Listings</h1>
             <p>Manage your equipment and transport listings</p>
           </div>
-          <a className="add-item-link dashboard-add-link" href="/seller/add-item">
+          <Link className="add-item-link dashboard-add-link" to="/seller/add-item">
             <span aria-hidden="true">+</span>
             Add New Listing
-          </a>
+          </Link>
         </div>
 
         {errorMessage && <p className="form-message error">{errorMessage}</p>}

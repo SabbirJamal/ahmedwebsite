@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Camera, ChevronDown, FileText, Truck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../../../components/Header';
 import { apiFetch } from '../../../lib/api';
 import {
@@ -19,6 +20,7 @@ import {
 import { TextInput } from './TextInput';
 
 export function AddFleetItemPage() {
+  const navigate = useNavigate();
   const [category, setCategory] = useState<FleetCategory>('equipment');
   const [subType, setSubType] = useState('');
   const [isActive, setIsActive] = useState(true);
@@ -87,7 +89,7 @@ export function AddFleetItemPage() {
             } = await supabase.auth.getSession();
 
             if (!session) {
-              window.location.assign('/login');
+              navigate('/login');
               return;
             }
 
@@ -187,7 +189,7 @@ export function AddFleetItemPage() {
               }
 
               setStatusMessage('Listing added successfully.');
-              window.location.assign('/seller');
+              navigate('/seller');
             } catch (error) {
               setErrorMessage(
                 error instanceof Error ? error.message : 'Could not create listing.',

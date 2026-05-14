@@ -9,6 +9,7 @@ import {
   Package,
   User,
 } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import { fleetTypes } from '../lib/fleet-options';
 import { supabase } from '../lib/supabase';
@@ -57,6 +58,8 @@ const menuGroups = [
 ];
 
 export function Header() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
@@ -64,7 +67,7 @@ export function Header() {
   const [notificationCount, setNotificationCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const profileCloseTimer = useRef<number | null>(null);
-  const isSellerSide = window.location.pathname.startsWith('/seller');
+  const isSellerSide = location.pathname.startsWith('/seller');
   const hasSellerAccess = Boolean(profile?.is_seller);
 
   useEffect(() => {
@@ -158,7 +161,7 @@ export function Header() {
     setAuthUser(null);
     setProfile(null);
     setIsProfileOpen(false);
-    window.location.assign('/');
+    navigate('/');
   }
 
   function openProfileMenu() {
@@ -184,7 +187,7 @@ export function Header() {
 
   async function handleNotificationClick(notification: NotificationItem) {
     if (!supabase) {
-      window.location.assign('/orders');
+      navigate('/orders');
       return;
     }
 
@@ -201,22 +204,22 @@ export function Header() {
       });
     }
 
-    window.location.assign(notification.rfq_quote_id ? '/seller/rfq' : '/orders');
+    navigate(notification.rfq_quote_id ? '/seller/rfq' : '/orders');
   }
 
   return (
     <header className="site-header">
-      <a className="brand" href="/">
+      <Link className="brand" to="/">
         <span>Trex</span>
         <span>-O</span>
-      </a>
+      </Link>
 
       <nav className="main-nav" aria-label="Main navigation">
         <div className="nav-mega-item">
-          <a className="nav-pill" href="/search">
+          <Link className="nav-pill" to="/search">
             Equipment Rentals
             <ChevronDown aria-hidden="true" />
-          </a>
+          </Link>
           <div className="mega-menu">
             {menuGroups.map((group) => (
               <div className="mega-column" key={group.title}>
@@ -229,14 +232,14 @@ export function Header() {
                   }
 
                   return (
-                    <a
+                    <Link
                       className="mega-link"
-                      href={`/search?category=${item.category}&type=${item.value}`}
                       key={item.value}
+                      to={`/search?category=${item.category}&type=${item.value}`}
                     >
                       <span>{item.label.slice(0, 2).toUpperCase()}</span>
                       {item.label}
-                    </a>
+                    </Link>
                   );
                 })}
               </div>
@@ -249,12 +252,12 @@ export function Header() {
         )}
         {authUser && hasSellerAccess && (
           <>
-            <a className="nav-list-link" href="/seller">
+            <Link className="nav-list-link" to="/seller">
               Seller Dashboard
-            </a>
-            <a className="nav-list-link" href="/seller/rfq">
+            </Link>
+            <Link className="nav-list-link" to="/seller/rfq">
               RFQs
-            </a>
+            </Link>
           </>
         )}
         <div className="sales-contact">
@@ -278,15 +281,15 @@ export function Header() {
             <Bell aria-hidden="true" />
             {notificationCount > 0 && <span>{notificationCount}</span>}
           </button>
-          <a aria-label="Messages" href="/messages">
+          <Link aria-label="Messages" to="/messages">
             <MessageSquare aria-hidden="true" />
-          </a>
-          <a aria-label="Saved items" href="/saved">
+          </Link>
+          <Link aria-label="Saved items" to="/saved">
             <Heart aria-hidden="true" />
-          </a>
-          <a aria-label="Requests" href="/requests">
+          </Link>
+          <Link aria-label="Requests" to="/requests">
             <MessageSquare aria-hidden="true" />
-          </a>
+          </Link>
         </nav>
       )}
 
@@ -338,12 +341,12 @@ export function Header() {
         {isProfileOpen && !authUser && (
           <div className="profile-menu" role="menu">
             <p>Register or login to access everything</p>
-            <a href="/register" role="menuitem">
+            <Link role="menuitem" to="/register">
               Create Account
-            </a>
-            <a href="/login" role="menuitem">
+            </Link>
+            <Link role="menuitem" to="/login">
               Sign In
-            </a>
+            </Link>
           </div>
         )}
 
@@ -353,28 +356,28 @@ export function Header() {
               <strong>{profile?.full_name || getFallbackName(authUser)}</strong>
               <span>{isSellerSide ? 'Seller Account' : 'Buyer Account'}</span>
             </div>
-            <a href="/account" role="menuitem">
+            <Link role="menuitem" to="/account">
               Account Settings
-            </a>
-            <a href={profile?.is_seller ? '/seller' : '/listings'} role="menuitem">
+            </Link>
+            <Link role="menuitem" to={profile?.is_seller ? '/seller' : '/listings'}>
               <Box aria-hidden="true" />
               My Listings
-            </a>
-            <a href="/orders" role="menuitem">
+            </Link>
+            <Link role="menuitem" to="/orders">
               <Package aria-hidden="true" />
               Orders
-            </a>
-            <a href={isSellerSide ? '/seller/rfq' : '/rfq'} role="menuitem">
+            </Link>
+            <Link role="menuitem" to={isSellerSide ? '/seller/rfq' : '/rfq'}>
               <Package aria-hidden="true" />
               {isSellerSide ? 'RFQ' : 'Ask for Quota'}
-            </a>
-            <a
+            </Link>
+            <Link
               className="seller-switch"
-              href={isSellerSide ? '/' : profile?.is_seller ? '/seller' : '/become-seller'}
               role="menuitem"
+              to={isSellerSide ? '/' : profile?.is_seller ? '/seller' : '/become-seller'}
             >
               {isSellerSide ? 'Switch to Buyer' : 'Switch to Seller'}
-            </a>
+            </Link>
             <button className="sign-out-button" type="button" onClick={handleSignOut}>
               <LogOut aria-hidden="true" />
               Sign Out
@@ -389,10 +392,10 @@ export function Header() {
 function SellerMarketingMenu({ label }: { label: string }) {
   return (
     <div className="nav-seller-item">
-      <a className="nav-list-link" href="/become-seller">
+      <Link className="nav-list-link" to="/become-seller">
         {label}
         <ChevronDown aria-hidden="true" />
-      </a>
+      </Link>
       <div className="seller-mega-menu">
         <div className="seller-mega-intro">
           <h2>Products for rental companies</h2>
@@ -411,7 +414,7 @@ function SellerMarketingMenu({ label }: { label: string }) {
             Add equipment and transport listings with photos, specs, rates,
             documents, and driver details.
           </p>
-          <a href="/become-seller">Get Started</a>
+          <Link to="/become-seller">Get Started</Link>
         </article>
         <article>
           <div className="seller-mega-visual">
@@ -423,7 +426,7 @@ function SellerMarketingMenu({ label }: { label: string }) {
             View buyer RFQs, send quotations, and respond faster from one focused
             seller dashboard.
           </p>
-          <a href="/become-seller">Start Selling</a>
+          <Link to="/become-seller">Start Selling</Link>
         </article>
       </div>
     </div>

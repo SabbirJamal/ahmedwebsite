@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   Building2,
@@ -11,6 +12,7 @@ import { apiFetch } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 
 export function BecomeSellerPage() {
+  const navigate = useNavigate();
   const [sellerPhone, setSellerPhone] = useState('');
   const [sellerCity, setSellerCity] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
@@ -28,7 +30,7 @@ export function BecomeSellerPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        window.location.assign('/login');
+        navigate('/login');
         return;
       }
 
@@ -39,7 +41,7 @@ export function BecomeSellerPage() {
         .single();
 
       if (data?.is_seller) {
-        window.location.assign('/seller');
+        navigate('/seller');
         return;
       }
 
@@ -48,7 +50,7 @@ export function BecomeSellerPage() {
     }
 
     void loadProfileDefaults();
-  }, []);
+  }, [navigate]);
 
   return (
     <main className="app-shell seller-shell">
@@ -81,7 +83,7 @@ export function BecomeSellerPage() {
             } = await supabase.auth.getSession();
 
             if (!session) {
-              window.location.assign('/login');
+              navigate('/login');
               return;
             }
 
@@ -111,7 +113,7 @@ export function BecomeSellerPage() {
               }
 
               setStatusMessage('Seller profile created successfully.');
-              window.location.assign('/seller');
+              navigate('/seller');
             } catch (error) {
               setErrorMessage(
                 error instanceof Error

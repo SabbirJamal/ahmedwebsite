@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Clock3, Heart, MapPin, Search, X } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Header } from '../../components/Header';
 import {
   fleetTypes,
@@ -26,7 +27,7 @@ type SearchListing = {
 };
 
 export function SearchPage() {
-  const params = new URLSearchParams(window.location.search);
+  const [params] = useSearchParams();
   const initialCategory =
     params.get('category') === 'transport' ? 'transport' : 'equipment';
   const initialType = params.get('type') || '';
@@ -250,9 +251,9 @@ export function SearchPage() {
                     <div className="result-footer">
                       <strong>{listing.daily_rate_omr}</strong>
                       <span>OMR / day</span>
-                      <a aria-label="View listing" href={`/listing/${listing.id}`}>
+                      <Link aria-label="View listing" to={`/listing/${listing.id}`}>
                         <ArrowRight aria-hidden="true" />
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </article>

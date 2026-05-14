@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import {
   fleetTypes,
@@ -10,6 +11,7 @@ import { brandOptions, omanLocations, yearOptions } from '../lib/search-options'
 type HomeStep = 'category' | 'details' | 'specs';
 
 export function HomePage() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<HomeStep>('category');
   const [category, setCategory] = useState<FleetCategory>('transport');
   const [selectedType, setSelectedType] = useState('');
@@ -191,9 +193,7 @@ export function HomePage() {
                   className="home-primary-button"
                   type="button"
                   onClick={() => {
-                    window.location.assign(
-                      `/search?category=${category}&type=${selectedType}`,
-                    );
+                    navigate(`/search?category=${category}&type=${selectedType}`);
                   }}
                 >
                   Search

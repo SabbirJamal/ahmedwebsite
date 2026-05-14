@@ -5,9 +5,11 @@ import {
   ChevronDown,
   Heart,
   LogOut,
+  Menu,
   MessageSquare,
   Package,
   User,
+  X,
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
@@ -62,6 +64,7 @@ export function Header() {
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [notificationCount, setNotificationCount] = useState(0);
@@ -161,6 +164,7 @@ export function Header() {
     setAuthUser(null);
     setProfile(null);
     setIsProfileOpen(false);
+    setIsMobileMenuOpen(false);
     navigate('/');
   }
 
@@ -172,6 +176,7 @@ export function Header() {
 
     setIsProfileOpen(true);
     setIsNotificationsOpen(false);
+    setIsMobileMenuOpen(false);
   }
 
   function scheduleProfileMenuClose() {
@@ -208,15 +213,33 @@ export function Header() {
   }
 
   return (
-    <header className="site-header">
+    <header className={`site-header ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>
       <Link className="brand" to="/">
         <span>Trex</span>
         <span>-O</span>
       </Link>
 
+      <button
+        aria-expanded={isMobileMenuOpen}
+        aria-label="Open navigation menu"
+        className="mobile-menu-button"
+        type="button"
+        onClick={() => {
+          setIsMobileMenuOpen((isOpen) => !isOpen);
+          setIsNotificationsOpen(false);
+          setIsProfileOpen(false);
+        }}
+      >
+        {isMobileMenuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+      </button>
+
       <nav className="main-nav" aria-label="Main navigation">
         <div className="nav-mega-item">
-          <Link className="nav-pill" to="/search">
+          <Link
+            className="nav-pill"
+            to="/search"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
             Equipment Rentals
             <ChevronDown aria-hidden="true" />
           </Link>
@@ -236,6 +259,7 @@ export function Header() {
                       className="mega-link"
                       key={item.value}
                       to={`/search?category=${item.category}&type=${item.value}`}
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <span>{item.label.slice(0, 2).toUpperCase()}</span>
                       {item.label}
@@ -246,16 +270,32 @@ export function Header() {
             ))}
           </div>
         </div>
-        {!authUser && <SellerMarketingMenu label="List Your Equipment" />}
+        {!authUser && (
+          <SellerMarketingMenu
+            label="List Your Equipment"
+            onNavigate={() => setIsMobileMenuOpen(false)}
+          />
+        )}
         {authUser && !hasSellerAccess && (
-          <SellerMarketingMenu label="Become a Seller" />
+          <SellerMarketingMenu
+            label="Become a Seller"
+            onNavigate={() => setIsMobileMenuOpen(false)}
+          />
         )}
         {authUser && hasSellerAccess && (
           <>
-            <Link className="nav-list-link" to="/seller">
+            <Link
+              className="nav-list-link"
+              to="/seller"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
               Seller Dashboard
             </Link>
-            <Link className="nav-list-link" to="/seller/rfq">
+            <Link
+              className="nav-list-link"
+              to="/seller/rfq"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
               RFQs
             </Link>
           </>
@@ -276,6 +316,7 @@ export function Header() {
             onClick={() => {
               setIsNotificationsOpen((isOpen) => !isOpen);
               setIsProfileOpen(false);
+              setIsMobileMenuOpen(false);
             }}
           >
             <Bell aria-hidden="true" />
@@ -327,6 +368,7 @@ export function Header() {
           onClick={() => {
             setIsProfileOpen((isOpen) => !isOpen);
             setIsNotificationsOpen(false);
+            setIsMobileMenuOpen(false);
           }}
           onFocus={() => {
             openProfileMenu();
@@ -341,10 +383,10 @@ export function Header() {
         {isProfileOpen && !authUser && (
           <div className="profile-menu" role="menu">
             <p>Register or login to access everything</p>
-            <Link role="menuitem" to="/register">
+            <Link role="menuitem" to="/register" onClick={() => setIsProfileOpen(false)}>
               Create Account
             </Link>
-            <Link role="menuitem" to="/login">
+            <Link role="menuitem" to="/login" onClick={() => setIsProfileOpen(false)}>
               Sign In
             </Link>
           </div>
@@ -356,18 +398,26 @@ export function Header() {
               <strong>{profile?.full_name || getFallbackName(authUser)}</strong>
               <span>{isSellerSide ? 'Seller Account' : 'Buyer Account'}</span>
             </div>
-            <Link role="menuitem" to="/account">
+            <Link role="menuitem" to="/account" onClick={() => setIsProfileOpen(false)}>
               Account Settings
             </Link>
-            <Link role="menuitem" to={profile?.is_seller ? '/seller' : '/listings'}>
+            <Link
+              role="menuitem"
+              to={profile?.is_seller ? '/seller' : '/listings'}
+              onClick={() => setIsProfileOpen(false)}
+            >
               <Box aria-hidden="true" />
               My Listings
             </Link>
-            <Link role="menuitem" to="/orders">
+            <Link role="menuitem" to="/orders" onClick={() => setIsProfileOpen(false)}>
               <Package aria-hidden="true" />
               Orders
             </Link>
-            <Link role="menuitem" to={isSellerSide ? '/seller/rfq' : '/rfq'}>
+            <Link
+              role="menuitem"
+              to={isSellerSide ? '/seller/rfq' : '/rfq'}
+              onClick={() => setIsProfileOpen(false)}
+            >
               <Package aria-hidden="true" />
               {isSellerSide ? 'RFQ' : 'Ask for Quota'}
             </Link>
@@ -375,6 +425,7 @@ export function Header() {
               className="seller-switch"
               role="menuitem"
               to={isSellerSide ? '/' : profile?.is_seller ? '/seller' : '/become-seller'}
+              onClick={() => setIsProfileOpen(false)}
             >
               {isSellerSide ? 'Switch to Buyer' : 'Switch to Seller'}
             </Link>
@@ -389,10 +440,16 @@ export function Header() {
   );
 }
 
-function SellerMarketingMenu({ label }: { label: string }) {
+function SellerMarketingMenu({
+  label,
+  onNavigate,
+}: {
+  label: string;
+  onNavigate: () => void;
+}) {
   return (
     <div className="nav-seller-item">
-      <Link className="nav-list-link" to="/become-seller">
+      <Link className="nav-list-link" to="/become-seller" onClick={onNavigate}>
         {label}
         <ChevronDown aria-hidden="true" />
       </Link>
@@ -414,7 +471,9 @@ function SellerMarketingMenu({ label }: { label: string }) {
             Add equipment and transport listings with photos, specs, rates,
             documents, and driver details.
           </p>
-          <Link to="/become-seller">Get Started</Link>
+          <Link to="/become-seller" onClick={onNavigate}>
+            Get Started
+          </Link>
         </article>
         <article>
           <div className="seller-mega-visual">
@@ -426,7 +485,9 @@ function SellerMarketingMenu({ label }: { label: string }) {
             View buyer RFQs, send quotations, and respond faster from one focused
             seller dashboard.
           </p>
-          <Link to="/become-seller">Start Selling</Link>
+          <Link to="/become-seller" onClick={onNavigate}>
+            Start Selling
+          </Link>
         </article>
       </div>
     </div>

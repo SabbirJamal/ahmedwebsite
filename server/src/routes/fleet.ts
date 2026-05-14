@@ -25,6 +25,27 @@ type ListingPayload = {
   description?: string;
   isActive?: boolean;
   specs?: Record<string, string | number>;
+  driverSpec?: {
+    age?: number;
+    driverName?: string;
+    licenseCategory?: string;
+    licenseNumber?: string;
+    passResidentCardNumber?: string;
+    passResidentCardUrl?: string;
+    similarOperationsSites?: string;
+    yearsOfExperience?: number;
+  };
+  vehicleSpec?: {
+    chassisVin?: string;
+    insurance?: string;
+    makeModel?: string;
+    numberOfTrailersTrucks?: number | null;
+    plateNumber?: string;
+    registrationValidity?: string;
+    vehicleAge?: number;
+    vehicleRegistrationUrl?: string;
+    yearOfManufacture?: number;
+  };
 };
 
 fleetRouter.get('/listings', async (request, response) => {
@@ -258,6 +279,60 @@ fleetRouter.post('/listings', async (request, response) => {
     return;
   }
 
+  const vehicleSpec = payload.vehicleSpec;
+  const driverSpec = payload.driverSpec;
+
+  if (
+    !vehicleSpec?.plateNumber?.trim() ||
+    !vehicleSpec.makeModel?.trim() ||
+    !vehicleSpec.chassisVin?.trim() ||
+    !vehicleSpec.registrationValidity ||
+    !vehicleSpec.vehicleRegistrationUrl?.trim() ||
+    !vehicleSpec.yearOfManufacture ||
+    vehicleSpec.vehicleAge === undefined
+  ) {
+    response.status(400).json({ message: 'Please fill all vehicle specifications.' });
+    return;
+  }
+
+  if (
+    vehicleSpec.yearOfManufacture < 1950 ||
+    vehicleSpec.yearOfManufacture > currentYear + 1 ||
+    vehicleSpec.vehicleAge < 0
+  ) {
+    response.status(400).json({ message: 'Please enter valid vehicle details.' });
+    return;
+  }
+
+  if (
+    payload.category === 'transport' &&
+    (!vehicleSpec.numberOfTrailersTrucks || vehicleSpec.numberOfTrailersTrucks < 1)
+  ) {
+    response.status(400).json({
+      message: 'Please enter the number of trailers/trucks.',
+    });
+    return;
+  }
+
+  if (
+    !driverSpec?.driverName?.trim() ||
+    !driverSpec.licenseCategory?.trim() ||
+    !driverSpec.licenseNumber?.trim() ||
+    !driverSpec.passResidentCardNumber?.trim() ||
+    !driverSpec.passResidentCardUrl?.trim() ||
+    !driverSpec.similarOperationsSites?.trim() ||
+    !driverSpec.age ||
+    driverSpec.yearsOfExperience === undefined
+  ) {
+    response.status(400).json({ message: 'Please fill all driver specifications.' });
+    return;
+  }
+
+  if (driverSpec.age < 18 || driverSpec.yearsOfExperience < 0) {
+    response.status(400).json({ message: 'Please enter valid driver details.' });
+    return;
+  }
+
   const expectedSpecs = specOptions[subType] || [];
   const submittedSpecs = payload.specs || {};
   const listingSpecs: Record<string, number | string> = {};
@@ -328,6 +403,54 @@ fleetRouter.post('/listings', async (request, response) => {
   if (listingError || !listing) {
     response.status(400).json({
       message: listingError?.message || 'Could not create listing.',
+    });
+    return;
+  }
+
+  const { error: vehicleSpecError } = await supabaseAdmin
+    .from('listing_vehicle_specs')
+    .insert({
+      listing_id: listing.id,
+      plate_number: vehicleSpec.plateNumber.trim(),
+      make_model: vehicleSpec.makeModel.trim(),
+      year_of_manufacture: vehicleSpec.yearOfManufacture,
+      chassis_vin: vehicleSpec.chassisVin.trim(),
+      vehicle_age: vehicleSpec.vehicleAge,
+      registration_validity: vehicleSpec.registrationValidity,
+      insurance: vehicleSpec.insurance?.trim() || null,
+      vehicle_registration_url: vehicleSpec.vehicleRegistrationUrl.trim(),
+      number_of_trailers_trucks:
+        payload.category === 'transport'
+          ? vehicleSpec.numberOfTrailersTrucks
+          : null,
+    });
+
+  if (vehicleSpecError) {
+    await supabaseAdmin.from('fleet_listings').delete().eq('id', listing.id);
+    response.status(400).json({
+      message: vehicleSpecError.message || 'Could not save vehicle specifications.',
+    });
+    return;
+  }
+
+  const { error: driverSpecError } = await supabaseAdmin
+    .from('listing_driver_specs')
+    .insert({
+      listing_id: listing.id,
+      driver_name: driverSpec.driverName.trim(),
+      age: driverSpec.age,
+      license_category: driverSpec.licenseCategory.trim(),
+      license_number: driverSpec.licenseNumber.trim(),
+      years_of_experience: driverSpec.yearsOfExperience,
+      similar_operations_sites: driverSpec.similarOperationsSites.trim(),
+      pass_resident_card_number: driverSpec.passResidentCardNumber.trim(),
+      pass_resident_card_url: driverSpec.passResidentCardUrl.trim(),
+    });
+
+  if (driverSpecError) {
+    await supabaseAdmin.from('fleet_listings').delete().eq('id', listing.id);
+    response.status(400).json({
+      message: driverSpecError.message || 'Could not save driver specifications.',
     });
     return;
   }

@@ -218,6 +218,8 @@ rfqsRouter.post('/', async (request, response) => {
     customerInfo,
     durationType,
     durationValue,
+    requestInfo,
+    routeInfo,
   } = request.body as {
     additionalNotes?: string;
     category?: FleetCategory;
@@ -231,6 +233,15 @@ rfqsRouter.post('/', async (request, response) => {
     };
     durationType?: string;
     durationValue?: number;
+    requestInfo?: {
+      numberOfTrips?: number;
+      numberOfUnits?: number;
+    };
+    routeInfo?: {
+      country?: string;
+      from?: string;
+      to?: string;
+    };
     specs?: RfqSpec[];
     subType?: string;
   };
@@ -263,6 +274,24 @@ rfqsRouter.post('/', async (request, response) => {
     requestedDurationValue < 1
   ) {
     response.status(400).json({ message: 'Please select a valid time period.' });
+    return;
+  }
+
+  const numberOfTrips = Number(requestInfo?.numberOfTrips);
+  const numberOfUnits = Number(requestInfo?.numberOfUnits);
+
+  if (
+    !Number.isInteger(numberOfTrips) ||
+    numberOfTrips < 1 ||
+    !Number.isInteger(numberOfUnits) ||
+    numberOfUnits < 1 ||
+    !routeInfo?.country?.trim() ||
+    !routeInfo.from?.trim() ||
+    !routeInfo.to?.trim()
+  ) {
+    response.status(400).json({
+      message: 'Please fill the trips, quantity, and destination details.',
+    });
     return;
   }
 
@@ -299,6 +328,15 @@ rfqsRouter.post('/', async (request, response) => {
     country: customerInfo?.country?.trim() || profile.country,
     email: customerInfo?.email?.trim() || profile.email,
     mobileNumber: customerInfo?.mobileNumber?.trim() || profile.phone,
+    requestInfo: {
+      numberOfTrips,
+      numberOfUnits,
+    },
+    routeInfo: {
+      country: routeInfo.country.trim(),
+      from: routeInfo.from.trim(),
+      to: routeInfo.to.trim(),
+    },
     vatNumber: customerInfo?.vatNumber?.trim() || null,
   };
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Bell,
   Box,
@@ -10,6 +10,7 @@ import {
   User,
 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
+import { fleetTypes } from '../lib/fleet-options';
 import { supabase } from '../lib/supabase';
 
 type Profile = {
@@ -36,6 +37,25 @@ type NotificationItem = {
   created_at: string;
 };
 
+const menuGroups = [
+  {
+    title: 'Heavy Equipment',
+    items: ['crane', 'excavator', 'loader', 'generator'],
+  },
+  {
+    title: 'Lifts and Handling',
+    items: ['forklift', 'reach_stacker', 'boom_lift', 'manlift'],
+  },
+  {
+    title: 'Trailers',
+    items: ['flatbed', 'box_trailer', 'lowbed'],
+  },
+  {
+    title: 'Transport Trucks',
+    items: ['prime_mover', 'recovery_truck', 'tanker'],
+  },
+];
+
 export function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -43,7 +63,9 @@ export function Header() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [notificationCount, setNotificationCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const profileCloseTimer = useRef<number | null>(null);
   const isSellerSide = window.location.pathname.startsWith('/seller');
+  const hasSellerAccess = Boolean(profile?.is_seller);
 
   useEffect(() => {
     let isMounted = true;
@@ -139,6 +161,27 @@ export function Header() {
     window.location.assign('/');
   }
 
+  function openProfileMenu() {
+    if (profileCloseTimer.current) {
+      window.clearTimeout(profileCloseTimer.current);
+      profileCloseTimer.current = null;
+    }
+
+    setIsProfileOpen(true);
+    setIsNotificationsOpen(false);
+  }
+
+  function scheduleProfileMenuClose() {
+    if (profileCloseTimer.current) {
+      window.clearTimeout(profileCloseTimer.current);
+    }
+
+    profileCloseTimer.current = window.setTimeout(() => {
+      setIsProfileOpen(false);
+      profileCloseTimer.current = null;
+    }, 180);
+  }
+
   async function handleNotificationClick(notification: NotificationItem) {
     if (!supabase) {
       window.location.assign('/orders');
@@ -169,8 +212,55 @@ export function Header() {
       </a>
 
       <nav className="main-nav" aria-label="Main navigation">
-        <a href="/rent-purchase">Rent/Purchase new</a>
-        <a href="/sell">Sell Equipments/Transport</a>
+        <div className="nav-mega-item">
+          <a className="nav-pill" href="/search">
+            Equipment Rentals
+            <ChevronDown aria-hidden="true" />
+          </a>
+          <div className="mega-menu">
+            {menuGroups.map((group) => (
+              <div className="mega-column" key={group.title}>
+                <h2>{group.title}</h2>
+                {group.items.map((value) => {
+                  const item = fleetTypes.find((fleetType) => fleetType.value === value);
+
+                  if (!item) {
+                    return null;
+                  }
+
+                  return (
+                    <a
+                      className="mega-link"
+                      href={`/search?category=${item.category}&type=${item.value}`}
+                      key={item.value}
+                    >
+                      <span>{item.label.slice(0, 2).toUpperCase()}</span>
+                      {item.label}
+                    </a>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+        {!authUser && <SellerMarketingMenu label="List Your Equipment" />}
+        {authUser && !hasSellerAccess && (
+          <SellerMarketingMenu label="Become a Seller" />
+        )}
+        {authUser && hasSellerAccess && (
+          <>
+            <a className="nav-list-link" href="/seller">
+              Seller Dashboard
+            </a>
+            <a className="nav-list-link" href="/seller/rfq">
+              RFQs
+            </a>
+          </>
+        )}
+        <div className="sales-contact">
+          <strong>Sales: +968 9121 3141</strong>
+          <span>Support: +968 9121 3141</span>
+        </div>
       </nav>
 
       {authUser && (
@@ -221,13 +311,23 @@ export function Header() {
         </div>
       )}
 
-      <div className="profile-area">
+      <div
+        className="profile-area"
+        onMouseEnter={openProfileMenu}
+        onMouseLeave={scheduleProfileMenuClose}
+      >
         <button
           aria-expanded={isProfileOpen}
           aria-label="Open profile menu"
           className={`profile-button ${authUser ? 'profile-button-active' : ''}`}
           type="button"
-          onClick={() => setIsProfileOpen((isOpen) => !isOpen)}
+          onClick={() => {
+            setIsProfileOpen((isOpen) => !isOpen);
+            setIsNotificationsOpen(false);
+          }}
+          onFocus={() => {
+            openProfileMenu();
+          }}
         >
           <span>
             <User aria-hidden="true" />
@@ -251,7 +351,7 @@ export function Header() {
           <div className="profile-menu account-menu" role="menu">
             <div className="account-summary">
               <strong>{profile?.full_name || getFallbackName(authUser)}</strong>
-              <span>{profile?.is_seller ? 'Seller Account' : 'Buyer Account'}</span>
+              <span>{isSellerSide ? 'Seller Account' : 'Buyer Account'}</span>
             </div>
             <a href="/account" role="menuitem">
               Account Settings
@@ -283,6 +383,50 @@ export function Header() {
         )}
       </div>
     </header>
+  );
+}
+
+function SellerMarketingMenu({ label }: { label: string }) {
+  return (
+    <div className="nav-seller-item">
+      <a className="nav-list-link" href="/become-seller">
+        {label}
+        <ChevronDown aria-hidden="true" />
+      </a>
+      <div className="seller-mega-menu">
+        <div className="seller-mega-intro">
+          <h2>Products for rental companies</h2>
+          <p>
+            Bring your fleet online, receive qualified rental requests, and compete
+            for RFQs from construction buyers.
+          </p>
+        </div>
+        <article>
+          <div className="seller-mega-visual">
+            <span>LIST</span>
+            <strong>Fleet</strong>
+          </div>
+          <h3>Create your seller workspace</h3>
+          <p>
+            Add equipment and transport listings with photos, specs, rates,
+            documents, and driver details.
+          </p>
+          <a href="/become-seller">Get Started</a>
+        </article>
+        <article>
+          <div className="seller-mega-visual">
+            <span>RFQ</span>
+            <strong>Offers</strong>
+          </div>
+          <h3>Win RFQ opportunities</h3>
+          <p>
+            View buyer RFQs, send quotations, and respond faster from one focused
+            seller dashboard.
+          </p>
+          <a href="/become-seller">Start Selling</a>
+        </article>
+      </div>
+    </div>
   );
 }
 

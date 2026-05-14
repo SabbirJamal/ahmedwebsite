@@ -6,7 +6,7 @@ type TextInputProps = {
   placeholder: string;
   required?: boolean;
   step?: string;
-  type?: SpecType;
+  type?: SpecType | 'date';
 };
 
 export function TextInput({

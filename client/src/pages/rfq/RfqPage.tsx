@@ -59,6 +59,14 @@ const commonRfqSpecs: SpecOption[] = [
   { key: 'model_number', label: 'Model Number', unit: '', type: 'text' },
   { key: 'year', label: 'Year', unit: '', type: 'number' },
 ];
+const gccCountryOptions = [
+  'Oman',
+  'Saudi Arabia',
+  'Qatar',
+  'Kuwait',
+  'Bahrain',
+  'Abu Dhabi',
+];
 
 export function RfqPage() {
   const [rfqs, setRfqs] = useState<RfqItem[]>([]);
@@ -183,6 +191,11 @@ export function RfqPage() {
     const additionalNotes = String(formData.get('additionalNotes') || '').trim();
     const durationType = String(formData.get('durationType') || '');
     const durationValue = Number(formData.get('durationValue') || 0);
+    const destinationCountry = String(formData.get('destinationCountry') || '').trim();
+    const destinationFrom = String(formData.get('destinationFrom') || '').trim();
+    const destinationTo = String(formData.get('destinationTo') || '').trim();
+    const numberOfTrips = Number(formData.get('numberOfTrips') || 0);
+    const numberOfUnits = Number(formData.get('numberOfUnits') || 0);
 
     if (!contactPerson || !mobileNumber || !email || !country) {
       setErrorMessage('Please fill the required customer information.');
@@ -200,6 +213,19 @@ export function RfqPage() {
       durationValue < 1
     ) {
       setErrorMessage('Please select a valid time period.');
+      return;
+    }
+
+    if (
+      !Number.isInteger(numberOfTrips) ||
+      numberOfTrips < 1 ||
+      !Number.isInteger(numberOfUnits) ||
+      numberOfUnits < 1 ||
+      !destinationCountry ||
+      !destinationFrom ||
+      !destinationTo
+    ) {
+      setErrorMessage('Please fill the trips, quantity, and destination details.');
       return;
     }
 
@@ -261,6 +287,15 @@ export function RfqPage() {
           },
           durationType,
           durationValue,
+          routeInfo: {
+            country: destinationCountry,
+            from: destinationFrom,
+            to: destinationTo,
+          },
+          requestInfo: {
+            numberOfTrips,
+            numberOfUnits,
+          },
           specs: selectedSpecs,
           subType,
         }),
@@ -767,6 +802,54 @@ export function RfqPage() {
                     step="1"
                     type="number"
                   />
+                </label>
+              </div>
+
+              <div className="rfq-duration-row">
+                <label>
+                  <span>Number of trips</span>
+                  <input
+                    min="1"
+                    name="numberOfTrips"
+                    placeholder="Enter trips"
+                    required
+                    step="1"
+                    type="number"
+                  />
+                </label>
+                <label>
+                  <span>Number of equipment/transport</span>
+                  <input
+                    min="1"
+                    name="numberOfUnits"
+                    placeholder="Enter quantity"
+                    required
+                    step="1"
+                    type="number"
+                  />
+                </label>
+              </div>
+
+              <label className="rfq-wide-field">
+                <span>Destination country</span>
+                <select name="destinationCountry" required defaultValue="">
+                  <option value="">Choose GCC country</option>
+                  {gccCountryOptions.map((countryOption) => (
+                    <option key={countryOption} value={countryOption}>
+                      {countryOption}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="rfq-duration-row">
+                <label>
+                  <span>From</span>
+                  <input name="destinationFrom" placeholder="Pickup location" required />
+                </label>
+                <label>
+                  <span>To</span>
+                  <input name="destinationTo" placeholder="Drop-off location" required />
                 </label>
               </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, Camera, ChevronDown, Truck } from 'lucide-react';
+import { ArrowRight, Camera, ChevronDown, FileText, Truck } from 'lucide-react';
 import { Header } from '../../../components/Header';
 import { apiFetch } from '../../../lib/api';
 import {
@@ -8,6 +8,10 @@ import {
   type FleetCategory,
 } from '../../../lib/fleet-options';
 import { supabase } from '../../../lib/supabase';
+import {
+  removeUploadedListingDocuments,
+  uploadListingDocument,
+} from './listingDocumentUpload';
 import {
   removeUploadedListingPhotos,
   uploadListingPhotos,
@@ -19,6 +23,10 @@ export function AddFleetItemPage() {
   const [subType, setSubType] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [registrationFile, setRegistrationFile] = useState<File | null>(null);
+  const [driverCardFile, setDriverCardFile] = useState<File | null>(null);
+  const [registrationFileName, setRegistrationFileName] = useState('');
+  const [driverCardFileName, setDriverCardFileName] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,6 +72,16 @@ export function AddFleetItemPage() {
               return;
             }
 
+            if (!registrationFile) {
+              setErrorMessage('Please upload the vehicle registration document.');
+              return;
+            }
+
+            if (!driverCardFile) {
+              setErrorMessage('Please upload the passport/resident card image.');
+              return;
+            }
+
             const {
               data: { session },
             } = await supabase.auth.getSession();
@@ -88,8 +106,23 @@ export function AddFleetItemPage() {
                 photoFiles,
                 session.user.id,
               );
+              const uploadedDocuments: string[] = [];
 
               try {
+                const vehicleRegistrationDocument = await uploadListingDocument(
+                  registrationFile,
+                  session.user.id,
+                  'vehicle-registration',
+                );
+                uploadedDocuments.push(vehicleRegistrationDocument.path);
+
+                const driverCardDocument = await uploadListingDocument(
+                  driverCardFile,
+                  session.user.id,
+                  'driver-card',
+                );
+                uploadedDocuments.push(driverCardDocument.path);
+
                 const response = await apiFetch('/api/fleet/listings', {
                   method: 'POST',
                   headers: {
@@ -101,8 +134,8 @@ export function AddFleetItemPage() {
                     subType,
                     name: formData.get('name'),
                     brand: formData.get('brand'),
-                    model: formData.get('model'),
-                    year: Number(formData.get('year')),
+                    model: formData.get('makeModel'),
+                    year: Number(formData.get('yearOfManufacture')),
                     locationCity: formData.get('locationCity'),
                     dailyRateOmr: Number(formData.get('dailyRateOmr')),
                     weeklyRateOmr: Number(formData.get('weeklyRateOmr')),
@@ -114,6 +147,30 @@ export function AddFleetItemPage() {
                     description: formData.get('description'),
                     isActive,
                     specs,
+                    vehicleSpec: {
+                      chassisVin: formData.get('chassisVin'),
+                      insurance: formData.get('insurance'),
+                      makeModel: formData.get('makeModel'),
+                      numberOfTrailersTrucks:
+                        category === 'transport'
+                          ? Number(formData.get('numberOfTrailersTrucks'))
+                          : null,
+                      plateNumber: formData.get('plateNumber'),
+                      registrationValidity: formData.get('registrationValidity'),
+                      vehicleAge: Number(formData.get('vehicleAge')),
+                      vehicleRegistrationUrl: vehicleRegistrationDocument.path,
+                      yearOfManufacture: Number(formData.get('yearOfManufacture')),
+                    },
+                    driverSpec: {
+                      age: Number(formData.get('driverAge')),
+                      driverName: formData.get('driverName'),
+                      licenseCategory: formData.get('licenseCategory'),
+                      licenseNumber: formData.get('licenseNumber'),
+                      passResidentCardNumber: formData.get('passResidentCardNumber'),
+                      passResidentCardUrl: driverCardDocument.path,
+                      similarOperationsSites: formData.get('similarOperationsSites'),
+                      yearsOfExperience: Number(formData.get('yearsOfExperience')),
+                    },
                   }),
                 });
                 const result = (await response.json()) as { message?: string };
@@ -125,6 +182,7 @@ export function AddFleetItemPage() {
                 await removeUploadedListingPhotos(
                   uploadedPhotos.map((photo) => photo.path),
                 );
+                await removeUploadedListingDocuments(uploadedDocuments);
                 throw error;
               }
 
@@ -180,11 +238,155 @@ export function AddFleetItemPage() {
           </section>
 
           <section className="form-section">
+            <h2>Specification</h2>
             <div className="add-item-grid">
               <TextInput label="Name" name="name" placeholder="Listing name" required />
               <TextInput label="Brand" name="brand" placeholder="Brand" required />
-              <TextInput label="Model" name="model" placeholder="Model" required />
-              <TextInput label="Year" name="year" placeholder="2022" required type="number" />
+              <TextInput
+                label="Plate Number"
+                name="plateNumber"
+                placeholder="Plate number"
+                required
+              />
+              <TextInput
+                label="Make / Model"
+                name="makeModel"
+                placeholder="Make / model"
+                required
+              />
+              <TextInput
+                label="Year of Manufacture"
+                name="yearOfManufacture"
+                placeholder="2022"
+                required
+                type="number"
+              />
+              <TextInput
+                label="Chassis / VIN"
+                name="chassisVin"
+                placeholder="Chassis or VIN"
+                required
+              />
+              <TextInput
+                label="Vehicle age"
+                name="vehicleAge"
+                placeholder="Vehicle age"
+                required
+                type="number"
+              />
+              <TextInput
+                label="Registration validity"
+                name="registrationValidity"
+                placeholder=""
+                required
+                type="date"
+              />
+              <TextInput
+                label="Insurance (optional)"
+                name="insurance"
+                placeholder="Insurance details"
+              />
+            </div>
+          </section>
+
+          {selectedSpecs.length > 0 && (
+            <section className="form-section">
+              <h2>Vehicle Specifications</h2>
+              <div className="add-item-grid">
+                {selectedSpecs.map((spec) => (
+                  <TextInput
+                    key={spec.key}
+                    label={`${spec.label}${spec.unit ? ` (${spec.unit})` : ''}`}
+                    name={spec.key}
+                    placeholder={spec.label}
+                    required
+                    type={spec.type}
+                  />
+                ))}
+                {category === 'transport' && (
+                  <TextInput
+                    label="Number of trailers/trucks"
+                    name="numberOfTrailersTrucks"
+                    placeholder="Number of trailers/trucks"
+                    required
+                    type="number"
+                  />
+                )}
+              </div>
+            </section>
+          )}
+
+          <section className="form-section">
+            <h2>Driver Specification</h2>
+            <div className="add-item-grid">
+              <TextInput
+                label="Driver name"
+                name="driverName"
+                placeholder="Driver name"
+                required
+              />
+              <TextInput
+                label="Age"
+                name="driverAge"
+                placeholder="Age"
+                required
+                type="number"
+              />
+              <TextInput
+                label="License category"
+                name="licenseCategory"
+                placeholder="License category"
+                required
+              />
+              <TextInput
+                label="License number"
+                name="licenseNumber"
+                placeholder="License number"
+                required
+              />
+              <TextInput
+                label="Years of experience"
+                name="yearsOfExperience"
+                placeholder="Years of experience"
+                required
+                type="number"
+              />
+              <TextInput
+                label="Similar operations/sites"
+                name="similarOperationsSites"
+                placeholder="Similar operations/sites"
+                required
+              />
+              <TextInput
+                label="Pass/resident card number"
+                name="passResidentCardNumber"
+                placeholder="Pass/resident card number"
+                required
+              />
+            </div>
+
+            <label className="photo-upload single-document-upload">
+              <FileText aria-hidden="true" />
+              <span>Upload passport/resident card image</span>
+              <input
+                accept="image/*"
+                  required
+                  type="file"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
+                    setDriverCardFile(file);
+                    setDriverCardFileName(file?.name || '');
+                  }}
+                />
+              </label>
+            {driverCardFileName && (
+              <p className="photo-count">{driverCardFileName} selected</p>
+            )}
+          </section>
+
+          <section className="form-section">
+            <h2>Other Information</h2>
+            <div className="add-item-grid">
               <TextInput
                 label="Location city"
                 name="locationCity"
@@ -242,40 +444,41 @@ export function AddFleetItemPage() {
             </label>
           </section>
 
-          {selectedSpecs.length > 0 && (
-            <section className="form-section">
-              <h2>Item specifications</h2>
-              <div className="add-item-grid">
-                {selectedSpecs.map((spec) => (
-                  <TextInput
-                    key={spec.key}
-                    label={`${spec.label}${spec.unit ? ` (${spec.unit})` : ''}`}
-                    name={spec.key}
-                    placeholder={spec.label}
-                    required
-                    type={spec.type}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
           <section className="form-section">
-            <h2>Photos</h2>
-            <label className="photo-upload">
-              <Camera aria-hidden="true" />
-              <span>Upload 1 to 4 photos</span>
-              <input
-                accept="image/*"
-                multiple
-                required
-                type="file"
-                onChange={(event) =>
-                  setPhotoFiles(Array.from(event.target.files || []).slice(0, 4))
-                }
-              />
-            </label>
+            <h2>Specification</h2>
+            <div className="document-upload-grid">
+              <label className="photo-upload">
+                <Camera aria-hidden="true" />
+                <span>Upload 1 to 4 equipment/transport photos</span>
+                <input
+                  accept="image/*"
+                  multiple
+                  required
+                  type="file"
+                  onChange={(event) =>
+                    setPhotoFiles(Array.from(event.target.files || []).slice(0, 4))
+                  }
+                />
+              </label>
+              <label className="photo-upload">
+                <FileText aria-hidden="true" />
+                <span>Vehicle registration PDF/DOC</span>
+                <input
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  required
+                  type="file"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
+                    setRegistrationFile(file);
+                    setRegistrationFileName(file?.name || '');
+                  }}
+                />
+              </label>
+            </div>
             <p className="photo-count">{photoFiles.length} photos selected</p>
+            {registrationFileName && (
+              <p className="photo-count">{registrationFileName} selected</p>
+            )}
           </section>
 
           <button className="register-submit" disabled={isSubmitting} type="submit">

@@ -78,6 +78,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_secret_service_role_key
 ```
 
 `CLIENT_ORIGINS` is comma-separated so local, Vercel preview, and custom domains can be allowed without code changes.
+The backend also includes the current Amplify and Trex-O production domains in its fallback CORS allowlist so production does not fall back to localhost-only if the Render variable is missing.
 
 ## Production Notes
 

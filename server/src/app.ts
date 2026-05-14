@@ -1,4 +1,4 @@
-import cors from 'cors';
+import cors, { type CorsOptions } from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import { env } from './config/env.js';
@@ -12,19 +12,31 @@ import { sellersRouter } from './routes/sellers.js';
 
 export const app = express();
 
-app.use(helmet());
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin || env.clientOrigins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
+const corsOptions: CorsOptions = {
+  allowedHeaders: ['Authorization', 'Content-Type'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  optionsSuccessStatus: 204,
+  origin(origin, callback) {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
 
-      callback(new Error(`CORS blocked origin: ${origin}`));
-    },
-  }),
-);
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+
+    if (env.clientOrigins.includes(normalizedOrigin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`CORS blocked origin: ${origin}`));
+  },
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+app.use(helmet());
 app.use(express.json());
 
 app.use('/api/health', healthRouter);

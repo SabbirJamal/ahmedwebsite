@@ -582,6 +582,52 @@ button {
   font-weight: 700;
 }
 
+.account-restricted-menu-message {
+  color: #9f1728;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.75rem 1.25rem;
+}
+
+.account-restricted-shell {
+  min-height: 100vh;
+  background: #f7f7f6;
+}
+
+.account-restricted-card {
+  background: #fff;
+  border: 1px solid #f0d6d9;
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(27, 31, 42, 0.08);
+  margin: 6rem auto;
+  max-width: 620px;
+  padding: 2rem;
+}
+
+.account-restricted-card span {
+  color: #9f1728;
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.account-restricted-card h1 {
+  color: #111827;
+  font-size: 2rem;
+  margin: 0 0 0.75rem;
+}
+
+.account-restricted-card p {
+  color: #4b5563;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
 .sign-out-button {
   border-top: 1px solid #edf0f3 !important;
   color: #dc2626 !important;

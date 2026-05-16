@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
+import { getAccountStatusMessage, isRestrictedStatus } from '../lib/accountStatus';
 import { fleetTypes } from '../lib/fleet-options';
 import { supabase } from '../lib/supabase';
 
@@ -20,6 +21,7 @@ type Profile = {
   full_name: string;
   is_buyer: boolean;
   is_seller: boolean;
+  status?: string | null;
 };
 
 type AuthUser = {
@@ -71,7 +73,8 @@ export function Header() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const profileCloseTimer = useRef<number | null>(null);
   const isSellerSide = location.pathname.startsWith('/seller');
-  const hasSellerAccess = Boolean(profile?.is_seller);
+  const isAccountRestricted = isRestrictedStatus(profile?.status);
+  const hasSellerAccess = Boolean(profile?.is_seller) && !isAccountRestricted;
 
   useEffect(() => {
     let isMounted = true;
@@ -99,12 +102,20 @@ export function Header() {
 
       const { data, error: profileError } = await supabase
         .from('profiles')
-        .select('full_name, is_buyer, is_seller')
+        .select('full_name, is_buyer, is_seller, status')
         .eq('id', user.id)
         .single();
 
       if (isMounted) {
         setProfile(profileError ? null : data);
+      }
+
+      if (isRestrictedStatus(data?.status)) {
+        if (isMounted) {
+          setNotificationCount(0);
+          setNotifications([]);
+        }
+        return;
       }
 
       const {
@@ -276,7 +287,7 @@ export function Header() {
             onNavigate={() => setIsMobileMenuOpen(false)}
           />
         )}
-        {authUser && !hasSellerAccess && (
+        {authUser && !hasSellerAccess && !isAccountRestricted && (
           <SellerMarketingMenu
             label="Become a Seller"
             onNavigate={() => setIsMobileMenuOpen(false)}
@@ -306,7 +317,7 @@ export function Header() {
         </div>
       </nav>
 
-      {authUser && (
+      {authUser && !isAccountRestricted && (
         <nav className="user-shortcuts" aria-label="User shortcuts">
           <button
             className="notification-link"
@@ -396,39 +407,56 @@ export function Header() {
           <div className="profile-menu account-menu" role="menu">
             <div className="account-summary">
               <strong>{profile?.full_name || getFallbackName(authUser)}</strong>
-              <span>{isSellerSide ? 'Seller Account' : 'Buyer Account'}</span>
+              <span>
+                {isAccountRestricted
+                  ? profile?.status === 'banned'
+                    ? 'Banned Account'
+                    : 'Suspended Account'
+                  : isSellerSide
+                    ? 'Seller Account'
+                    : 'Buyer Account'}
+              </span>
             </div>
+            {isAccountRestricted && (
+              <p className="account-restricted-menu-message">
+                {getAccountStatusMessage(profile?.status)}
+              </p>
+            )}
             <Link role="menuitem" to="/account" onClick={() => setIsProfileOpen(false)}>
               Account Settings
             </Link>
-            <Link
-              role="menuitem"
-              to={profile?.is_seller ? '/seller' : '/become-seller'}
-              onClick={() => setIsProfileOpen(false)}
-            >
-              <Box aria-hidden="true" />
-              My Listings
-            </Link>
-            <Link role="menuitem" to="/orders" onClick={() => setIsProfileOpen(false)}>
-              <Package aria-hidden="true" />
-              Orders
-            </Link>
-            <Link
-              role="menuitem"
-              to={isSellerSide ? '/seller/rfq' : '/rfq'}
-              onClick={() => setIsProfileOpen(false)}
-            >
-              <Package aria-hidden="true" />
-              {isSellerSide ? 'RFQ' : 'Ask for Quota'}
-            </Link>
-            <Link
-              className="seller-switch"
-              role="menuitem"
-              to={isSellerSide ? '/' : profile?.is_seller ? '/seller' : '/become-seller'}
-              onClick={() => setIsProfileOpen(false)}
-            >
-              {isSellerSide ? 'Switch to Buyer' : 'Switch to Seller'}
-            </Link>
+            {!isAccountRestricted && (
+              <>
+                <Link
+                  role="menuitem"
+                  to={profile?.is_seller ? '/seller' : '/become-seller'}
+                  onClick={() => setIsProfileOpen(false)}
+                >
+                  <Box aria-hidden="true" />
+                  My Listings
+                </Link>
+                <Link role="menuitem" to="/orders" onClick={() => setIsProfileOpen(false)}>
+                  <Package aria-hidden="true" />
+                  Orders
+                </Link>
+                <Link
+                  role="menuitem"
+                  to={isSellerSide ? '/seller/rfq' : '/rfq'}
+                  onClick={() => setIsProfileOpen(false)}
+                >
+                  <Package aria-hidden="true" />
+                  {isSellerSide ? 'RFQ' : 'Ask for Quota'}
+                </Link>
+                <Link
+                  className="seller-switch"
+                  role="menuitem"
+                  to={isSellerSide ? '/' : profile?.is_seller ? '/seller' : '/become-seller'}
+                  onClick={() => setIsProfileOpen(false)}
+                >
+                  {isSellerSide ? 'Switch to Buyer' : 'Switch to Seller'}
+                </Link>
+              </>
+            )}
             <button className="sign-out-button" type="button" onClick={handleSignOut}>
               <LogOut aria-hidden="true" />
               Sign Out

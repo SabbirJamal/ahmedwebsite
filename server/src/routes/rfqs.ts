@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { getActiveProfile, getAuthenticatedProfile } from '../lib/account-access.js';
 import { fleetTypes, specOptions, type FleetCategory } from '../lib/fleet-options.js';
 import { supabaseAdmin } from '../lib/supabase.js';
 
@@ -24,17 +25,7 @@ type RfqStatusAction = 'activate' | 'deactivate';
 const commonRfqSpecKeys = new Set(['brand', 'model_number', 'year']);
 
 async function getUserId(token?: string) {
-  if (!supabaseAdmin || !token) {
-    return { error: 'Please sign in first.' };
-  }
-
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
-
-  if (error || !data.user) {
-    return { error: 'Your session has expired.' };
-  }
-
-  return { userId: data.user.id };
+  return getAuthenticatedProfile(token);
 }
 
 async function getApprovedSellerProfileId(userId: string) {
@@ -44,11 +35,15 @@ async function getApprovedSellerProfileId(userId: string) {
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('is_seller')
+    .select('is_seller, status')
     .eq('id', userId)
-    .single();
+    .single<{ is_seller: boolean; status: string | null }>();
 
-  if (profileError || !profile?.is_seller) {
+  if (profileError || (profile?.status || 'active') !== 'active') {
+    return { error: 'Your account cannot use RFQ seller actions right now.' };
+  }
+
+  if (!profile?.is_seller) {
     return { error: 'Your seller application is waiting for admin approval.' };
   }
 
@@ -93,10 +88,10 @@ rfqsRouter.get('/', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getUserId(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 401).json({ message: error });
     return;
   }
 
@@ -163,10 +158,10 @@ rfqsRouter.get('/open', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getActiveProfile(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 
@@ -228,10 +223,10 @@ rfqsRouter.post('/', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getActiveProfile(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 
@@ -400,10 +395,10 @@ rfqsRouter.patch('/:id/status', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getActiveProfile(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 
@@ -442,10 +437,10 @@ rfqsRouter.post('/:id/quotes', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getActiveProfile(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 
@@ -531,10 +526,10 @@ rfqsRouter.patch('/quotes/:id/status', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getActiveProfile(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 

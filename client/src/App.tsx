@@ -20,6 +20,8 @@ import { SellerPage } from './pages/seller/SellerPage';
 import { AddFleetItemPage } from './pages/seller/seller-add-item/AddFleetItemPage';
 import { SellerRfqPage } from './pages/seller/seller-rfq/SellerRfqPage';
 import { supabase } from './lib/supabase';
+import { AccountRestrictedNotice } from './components/AccountRestrictedNotice';
+import { isRestrictedStatus } from './lib/accountStatus';
 
 export function App() {
   return (
@@ -30,7 +32,14 @@ export function App() {
         <Route element={<RegisterPage />} path="/register" />
         <Route element={<BecomeSellerPage />} path="/become-seller" />
         <Route element={<SearchPage />} path="/search" />
-        <Route element={<OrdersPage />} path="/orders" />
+        <Route
+          element={
+            <ProtectedActiveAccountRoute>
+              <OrdersPage />
+            </ProtectedActiveAccountRoute>
+          }
+          path="/orders"
+        />
         <Route
           element={
             <ProtectedSellerRoute>
@@ -39,7 +48,14 @@ export function App() {
           }
           path="/seller/orders"
         />
-        <Route element={<RfqPage />} path="/rfq" />
+        <Route
+          element={
+            <ProtectedActiveAccountRoute>
+              <RfqPage />
+            </ProtectedActiveAccountRoute>
+          }
+          path="/rfq"
+        />
         <Route element={<ListingDetailRoute />} path="/listing/:listingId" />
         <Route
           element={
@@ -80,9 +96,12 @@ export function App() {
 }
 
 function ProtectedSellerRoute({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<'loading' | 'signed-out' | 'approved' | 'not-approved'>(
+  const [status, setStatus] = useState<
+    'loading' | 'signed-out' | 'approved' | 'not-approved' | 'restricted'
+  >(
     'loading',
   );
+  const [accountStatus, setAccountStatus] = useState<string | null>(null);
 
   useEffect(() => {
     async function verifySellerAccess() {
@@ -102,9 +121,15 @@ function ProtectedSellerRoute({ children }: { children: ReactNode }) {
 
       const { data } = await supabase
         .from('profiles')
-        .select('is_seller')
+        .select('is_seller, status')
         .eq('id', user.id)
         .single();
+
+      if (isRestrictedStatus(data?.status)) {
+        setAccountStatus(data?.status || null);
+        setStatus('restricted');
+        return;
+      }
 
       setStatus(data?.is_seller ? 'approved' : 'not-approved');
     }
@@ -120,8 +145,67 @@ function ProtectedSellerRoute({ children }: { children: ReactNode }) {
     return <Navigate replace to="/login" />;
   }
 
+  if (status === 'restricted') {
+    return <AccountRestrictedNotice status={accountStatus} />;
+  }
+
   if (status === 'not-approved') {
     return <Navigate replace to="/become-seller" />;
+  }
+
+  return children;
+}
+
+function ProtectedActiveAccountRoute({ children }: { children: ReactNode }) {
+  const [status, setStatus] = useState<'loading' | 'signed-out' | 'active' | 'restricted'>(
+    'loading',
+  );
+  const [accountStatus, setAccountStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function verifyAccountStatus() {
+      if (!supabase) {
+        setStatus('signed-out');
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setStatus('signed-out');
+        return;
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('status')
+        .eq('id', user.id)
+        .single();
+
+      if (isRestrictedStatus(data?.status)) {
+        setAccountStatus(data?.status || null);
+        setStatus('restricted');
+        return;
+      }
+
+      setStatus('active');
+    }
+
+    void verifyAccountStatus();
+  }, []);
+
+  if (status === 'loading') {
+    return <p className="seller-empty">Checking account access...</p>;
+  }
+
+  if (status === 'signed-out') {
+    return <Navigate replace to="/login" />;
+  }
+
+  if (status === 'restricted') {
+    return <AccountRestrictedNotice status={accountStatus} />;
   }
 
   return children;

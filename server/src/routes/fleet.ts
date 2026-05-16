@@ -5,6 +5,7 @@ import {
   specOptions,
   type FleetCategory,
 } from '../lib/fleet-options.js';
+import { getActiveProfile } from '../lib/account-access.js';
 import { supabaseAdmin } from '../lib/supabase.js';
 
 export const fleetRouter = Router();
@@ -86,38 +87,37 @@ fleetRouter.get('/listings', async (request, response) => {
 });
 
 async function getSellerProfileId(token?: string) {
-  if (!supabaseAdmin || !token) {
-    return { error: 'Please sign in first.' };
+  if (!supabaseAdmin) {
+    return {
+      error: 'Supabase service role key is not configured on the server.',
+      statusCode: 500,
+    };
   }
 
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
+  const { profile, userId, error, statusCode } = await getActiveProfile(token);
 
-  if (userError || !userData.user) {
-    return { error: 'Your session has expired.' };
+  if (error || !profile || !userId) {
+    return { error, statusCode };
   }
 
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('is_seller')
-    .eq('id', userData.user.id)
-    .single();
-
-  if (profileError || !profile?.is_seller) {
-    return { error: 'Your seller application is waiting for admin approval.' };
+  if (!profile.is_seller) {
+    return {
+      error: 'Your seller application is waiting for admin approval.',
+      statusCode: 403,
+    };
   }
 
   const { data: sellerProfile, error: sellerError } = await supabaseAdmin
     .from('seller_profiles')
     .select('id')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userId)
     .single();
 
   if (sellerError || !sellerProfile) {
     return { error: 'Please create a seller profile first.' };
   }
 
-  return { sellerProfileId: sellerProfile.id };
+  return { sellerProfileId: sellerProfile.id, userId };
 }
 
 fleetRouter.get('/listings/mine', async (request, response) => {
@@ -129,10 +129,10 @@ fleetRouter.get('/listings/mine', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { sellerProfileId, error } = await getSellerProfileId(token);
+  const { sellerProfileId, error, statusCode } = await getSellerProfileId(token);
 
   if (error || !sellerProfileId) {
-    response.status(error === 'Please sign in first.' ? 401 : 403).json({
+    response.status(statusCode || 403).json({
       message: error,
     });
     return;
@@ -190,10 +190,10 @@ fleetRouter.patch('/listings/:id/status', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { sellerProfileId, error } = await getSellerProfileId(token);
+  const { sellerProfileId, error, statusCode } = await getSellerProfileId(token);
 
   if (error || !sellerProfileId) {
-    response.status(error === 'Please sign in first.' ? 401 : 403).json({
+    response.status(statusCode || 403).json({
       message: error,
     });
     return;
@@ -233,30 +233,11 @@ fleetRouter.post('/listings', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
+  const { sellerProfileId, userId, error, statusCode } =
+    await getSellerProfileId(token);
 
-  if (!token) {
-    response.status(401).json({ message: 'Please sign in first.' });
-    return;
-  }
-
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    response.status(401).json({ message: 'Your session has expired.' });
-    return;
-  }
-
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('is_seller')
-    .eq('id', userData.user.id)
-    .single();
-
-  if (profileError || !profile?.is_seller) {
-    response.status(403).json({
-      message: 'Your seller application is waiting for admin approval.',
-    });
+  if (error || !sellerProfileId || !userId) {
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 
@@ -376,17 +357,6 @@ fleetRouter.post('/listings', async (request, response) => {
     }
   }
 
-  const { data: sellerProfile, error: sellerError } = await supabaseAdmin
-    .from('seller_profiles')
-    .select('id')
-    .eq('user_id', userData.user.id)
-    .single();
-
-  if (sellerError || !sellerProfile) {
-    response.status(403).json({ message: 'Please create a seller profile first.' });
-    return;
-  }
-
   const searchableSpecs: Record<string, number> = {};
   const additionalSpecs: Record<string, number | string> = {};
 
@@ -402,7 +372,7 @@ fleetRouter.post('/listings', async (request, response) => {
   const { data: listing, error: listingError } = await supabaseAdmin
     .from('fleet_listings')
     .insert({
-      seller_profile_id: sellerProfile.id,
+      seller_profile_id: sellerProfileId,
       category: payload.category,
       sub_type: subType,
       name: payload.name.trim(),

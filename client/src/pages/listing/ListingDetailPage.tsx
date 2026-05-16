@@ -10,6 +10,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Header } from '../../components/Header';
 import { apiFetch } from '../../lib/api';
+import { getAccountStatusMessage, isRestrictedStatus } from '../../lib/accountStatus';
 import { fleetTypes, specOptions } from '../../lib/fleet-options';
 import { supabase } from '../../lib/supabase';
 
@@ -193,6 +194,22 @@ export function ListingDetailPage({ listingId }: { listingId: string }) {
 
               if (!session) {
                 setIsLoginPromptOpen(true);
+                return;
+              }
+
+              if (!supabase) {
+                setBookingMessage('Supabase is not configured.');
+                return;
+              }
+
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('status')
+                .eq('id', session.user.id)
+                .single();
+
+              if (isRestrictedStatus(profile?.status)) {
+                setBookingMessage(getAccountStatusMessage(profile?.status));
                 return;
               }
 

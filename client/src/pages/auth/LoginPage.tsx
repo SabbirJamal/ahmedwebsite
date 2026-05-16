@@ -10,6 +10,7 @@ import {
   Truck,
 } from 'lucide-react';
 import { Header } from '../../components/Header';
+import { getAccountStatusMessage, isRestrictedStatus } from '../../lib/accountStatus';
 import { supabase } from '../../lib/supabase';
 
 export function LoginPage() {
@@ -84,9 +85,15 @@ export function LoginPage() {
 
                 const { data: profile } = await supabase
                   .from('profiles')
-                  .select('full_name')
+                  .select('full_name, status')
                   .eq('id', data.user.id)
                   .single();
+
+                if (isRestrictedStatus(profile?.status)) {
+                  setStatusMessage(getAccountStatusMessage(profile?.status));
+                  navigate('/orders');
+                  return;
+                }
 
                 setStatusMessage(
                   profile?.full_name

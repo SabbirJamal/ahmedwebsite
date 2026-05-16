@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { getActiveProfile } from '../lib/account-access.js';
 import { supabaseAdmin } from '../lib/supabase.js';
 
 export const sellersRouter = Router();
@@ -12,17 +13,10 @@ sellersRouter.post('/profile', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
+  const { profile, userId, error, statusCode } = await getActiveProfile(token);
 
-  if (!token) {
-    response.status(401).json({ message: 'Please sign in first.' });
-    return;
-  }
-
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    response.status(401).json({ message: 'Your session has expired.' });
+  if (error || !profile || !userId) {
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 
@@ -41,18 +35,6 @@ sellersRouter.post('/profile', async (request, response) => {
     !locationCity?.trim()
   ) {
     response.status(400).json({ message: 'Please fill all required fields.' });
-    return;
-  }
-
-  const userId = userData.user.id;
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('id, is_seller')
-    .eq('id', userId)
-    .single();
-
-  if (profileError || !profile) {
-    response.status(404).json({ message: 'Buyer profile was not found.' });
     return;
   }
 

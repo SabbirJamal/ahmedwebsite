@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { AccountRestrictedNotice } from '../../components/AccountRestrictedNotice';
 import { Header } from '../../components/Header';
 import { apiFetch } from '../../lib/api';
+import { isRestrictedStatus } from '../../lib/accountStatus';
 import {
   fleetTypes,
   specOptions,
@@ -16,6 +18,7 @@ type ProfileSnapshot = {
   email: string;
   full_name: string;
   phone: string;
+  status?: string | null;
 };
 
 type RfqSpecRow = {
@@ -110,7 +113,7 @@ export function RfqPage() {
     if (user) {
       const { data } = await supabase
         .from('profiles')
-        .select('full_name, email, phone, country')
+        .select('full_name, email, phone, country, status')
         .eq('id', user.id)
         .single();
 
@@ -143,6 +146,10 @@ export function RfqPage() {
   useEffect(() => {
     void loadRfqs();
   }, [loadRfqs]);
+
+  if (isRestrictedStatus(profile?.status)) {
+    return <AccountRestrictedNotice status={profile?.status} />;
+  }
 
   const itemOptions = useMemo(
     () => fleetTypes.filter((item) => item.category === category),

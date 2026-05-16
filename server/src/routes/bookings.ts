@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { getActiveProfile, getAuthenticatedProfile } from '../lib/account-access.js';
 import { supabaseAdmin } from '../lib/supabase.js';
 
 export const bookingsRouter = Router();
@@ -15,17 +16,7 @@ type BookingStatus =
 type BookingAction = 'accept' | 'reject' | 'delivered' | 'buyer_completed' | 'completed';
 
 async function getUserId(token?: string) {
-  if (!supabaseAdmin || !token) {
-    return { error: 'Please sign in first.' };
-  }
-
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
-
-  if (error || !data.user) {
-    return { error: 'Your session has expired.' };
-  }
-
-  return { userId: data.user.id };
+  return getAuthenticatedProfile(token);
 }
 
 async function getApprovedSellerProfileId(userId: string) {
@@ -35,11 +26,11 @@ async function getApprovedSellerProfileId(userId: string) {
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('is_seller')
+    .select('is_seller, status')
     .eq('id', userId)
-    .single();
+    .single<{ is_seller: boolean; status: string | null }>();
 
-  if (profileError || !profile?.is_seller) {
+  if (profileError || (profile?.status || 'active') !== 'active' || !profile?.is_seller) {
     return { sellerProfileId: null };
   }
 
@@ -89,10 +80,10 @@ bookingsRouter.post('/', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getActiveProfile(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 
@@ -172,10 +163,10 @@ bookingsRouter.get('/orders', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getActiveProfile(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 
@@ -245,10 +236,10 @@ bookingsRouter.get('/notifications/count', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getActiveProfile(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 
@@ -270,10 +261,10 @@ bookingsRouter.get('/notifications', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getUserId(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 401).json({ message: error });
     return;
   }
 
@@ -305,10 +296,10 @@ bookingsRouter.patch('/notifications/:id/read', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getActiveProfile(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 
@@ -330,10 +321,10 @@ bookingsRouter.patch('/:id/status', async (request, response) => {
   }
 
   const token = request.headers.authorization?.replace('Bearer ', '');
-  const { userId, error } = await getUserId(token);
+  const { userId, error, statusCode } = await getActiveProfile(token);
 
   if (error || !userId) {
-    response.status(401).json({ message: error });
+    response.status(statusCode || 403).json({ message: error });
     return;
   }
 

@@ -7,8 +7,10 @@ import {
   Phone,
   ShieldCheck,
 } from 'lucide-react';
+import { AccountRestrictedNotice } from '../../components/AccountRestrictedNotice';
 import { Header } from '../../components/Header';
 import { apiFetch } from '../../lib/api';
+import { isRestrictedStatus } from '../../lib/accountStatus';
 import { supabase } from '../../lib/supabase';
 
 export function BecomeSellerPage() {
@@ -19,6 +21,7 @@ export function BecomeSellerPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasPendingApplication, setHasPendingApplication] = useState(false);
+  const [accountStatus, setAccountStatus] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadProfileDefaults() {
@@ -37,9 +40,14 @@ export function BecomeSellerPage() {
 
       const { data } = await supabase
         .from('profiles')
-        .select('phone, city, is_seller')
+        .select('phone, city, is_seller, status')
         .eq('id', user.id)
         .single();
+
+      if (isRestrictedStatus(data?.status)) {
+        setAccountStatus(data?.status || null);
+        return;
+      }
 
       if (data?.is_seller) {
         navigate('/seller');
@@ -60,6 +68,10 @@ export function BecomeSellerPage() {
 
     void loadProfileDefaults();
   }, [navigate]);
+
+  if (isRestrictedStatus(accountStatus)) {
+    return <AccountRestrictedNotice status={accountStatus} />;
+  }
 
   return (
     <main className="app-shell seller-shell">

@@ -37,6 +37,34 @@ async function getUserId(token?: string) {
   return { userId: data.user.id };
 }
 
+async function getApprovedSellerProfileId(userId: string) {
+  if (!supabaseAdmin) {
+    return { error: 'Supabase service role key is not configured on the server.' };
+  }
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('is_seller')
+    .eq('id', userId)
+    .single();
+
+  if (profileError || !profile?.is_seller) {
+    return { error: 'Your seller application is waiting for admin approval.' };
+  }
+
+  const { data: sellerProfile, error: sellerError } = await supabaseAdmin
+    .from('seller_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (sellerError || !sellerProfile) {
+    return { error: 'Please create a seller profile first.' };
+  }
+
+  return { sellerProfileId: sellerProfile.id };
+}
+
 async function createRfqNotification(input: {
   message: string;
   quoteId: string;
@@ -142,14 +170,11 @@ rfqsRouter.get('/open', async (request, response) => {
     return;
   }
 
-  const { data: sellerProfile, error: sellerError } = await supabaseAdmin
-    .from('seller_profiles')
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
+  const { sellerProfileId, error: sellerAccessError } =
+    await getApprovedSellerProfileId(userId);
 
-  if (sellerError || !sellerProfile) {
-    response.status(403).json({ message: 'Please create a seller profile first.' });
+  if (sellerAccessError || !sellerProfileId) {
+    response.status(403).json({ message: sellerAccessError });
     return;
   }
 
@@ -173,7 +198,7 @@ rfqsRouter.get('/open', async (request, response) => {
     ? await supabaseAdmin
         .from('rfq_quotes')
         .select('id, rfq_id, status')
-        .eq('seller_profile_id', sellerProfile.id)
+        .eq('seller_profile_id', sellerProfileId)
         .in('rfq_id', rfqIds)
     : { data: [], error: null };
 
@@ -424,14 +449,11 @@ rfqsRouter.post('/:id/quotes', async (request, response) => {
     return;
   }
 
-  const { data: sellerProfile, error: sellerError } = await supabaseAdmin
-    .from('seller_profiles')
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
+  const { sellerProfileId, error: sellerAccessError } =
+    await getApprovedSellerProfileId(userId);
 
-  if (sellerError || !sellerProfile) {
-    response.status(403).json({ message: 'Please create a seller profile first.' });
+  if (sellerAccessError || !sellerProfileId) {
+    response.status(403).json({ message: sellerAccessError });
     return;
   }
 
@@ -477,7 +499,7 @@ rfqsRouter.post('/:id/quotes', async (request, response) => {
     .from('rfq_quotes')
     .insert({
       rfq_id: rfq.id,
-      seller_profile_id: sellerProfile.id,
+      seller_profile_id: sellerProfileId,
       price_amount: requestedPrice,
       price_period: rfq.duration_type,
       hours_used: requestedHours,

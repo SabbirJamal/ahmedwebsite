@@ -97,6 +97,16 @@ async function getSellerProfileId(token?: string) {
     return { error: 'Your session has expired.' };
   }
 
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('is_seller')
+    .eq('id', userData.user.id)
+    .single();
+
+  if (profileError || !profile?.is_seller) {
+    return { error: 'Your seller application is waiting for admin approval.' };
+  }
+
   const { data: sellerProfile, error: sellerError } = await supabaseAdmin
     .from('seller_profiles')
     .select('id')
@@ -234,6 +244,19 @@ fleetRouter.post('/listings', async (request, response) => {
 
   if (userError || !userData.user) {
     response.status(401).json({ message: 'Your session has expired.' });
+    return;
+  }
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('is_seller')
+    .eq('id', userData.user.id)
+    .single();
+
+  if (profileError || !profile?.is_seller) {
+    response.status(403).json({
+      message: 'Your seller application is waiting for admin approval.',
+    });
     return;
   }
 

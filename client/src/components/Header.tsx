@@ -403,7 +403,7 @@ export function Header() {
             </Link>
             <Link
               role="menuitem"
-              to={profile?.is_seller ? '/seller' : '/listings'}
+              to={profile?.is_seller ? '/seller' : '/become-seller'}
               onClick={() => setIsProfileOpen(false)}
             >
               <Box aria-hidden="true" />

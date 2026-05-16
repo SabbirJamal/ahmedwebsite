@@ -61,6 +61,28 @@ sellersRouter.post('/profile', async (request, response) => {
     return;
   }
 
+  const { data: existingApplication, error: existingApplicationError } =
+    await supabaseAdmin
+      .from('seller_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+  if (existingApplicationError) {
+    response.status(400).json({
+      message: existingApplicationError.message,
+    });
+    return;
+  }
+
+  if (existingApplication) {
+    response.status(409).json({
+      message: 'Your seller application is waiting for admin approval.',
+      sellerProfileId: existingApplication.id,
+    });
+    return;
+  }
+
   const { data: sellerProfile, error: sellerError } = await supabaseAdmin
     .from('seller_profiles')
     .insert({
@@ -83,25 +105,8 @@ sellersRouter.post('/profile', async (request, response) => {
     return;
   }
 
-  const { error: updateError } = await supabaseAdmin
-    .from('profiles')
-    .update({ is_seller: true })
-    .eq('id', userId);
-
-  if (updateError) {
-    await supabaseAdmin
-      .from('seller_profiles')
-      .delete()
-      .eq('id', sellerProfile.id);
-
-    response.status(400).json({
-      message: updateError.message,
-    });
-    return;
-  }
-
   response.status(201).json({
-    message: 'Seller profile created successfully.',
+    message: 'Seller application submitted for admin approval.',
     sellerProfileId: sellerProfile.id,
   });
 });

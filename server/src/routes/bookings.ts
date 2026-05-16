@@ -28,6 +28,34 @@ async function getUserId(token?: string) {
   return { userId: data.user.id };
 }
 
+async function getApprovedSellerProfileId(userId: string) {
+  if (!supabaseAdmin) {
+    return { error: 'Supabase service role key is not configured on the server.' };
+  }
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('is_seller')
+    .eq('id', userId)
+    .single();
+
+  if (profileError || !profile?.is_seller) {
+    return { sellerProfileId: null };
+  }
+
+  const { data: sellerProfile, error: sellerError } = await supabaseAdmin
+    .from('seller_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (sellerError || !sellerProfile) {
+    return { sellerProfileId: null };
+  }
+
+  return { sellerProfileId: sellerProfile.id };
+}
+
 async function createNotification(input: {
   userId: string;
   bookingId: string;
@@ -151,11 +179,7 @@ bookingsRouter.get('/orders', async (request, response) => {
     return;
   }
 
-  const { data: sellerProfile } = await supabaseAdmin
-    .from('seller_profiles')
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
+  const { sellerProfileId } = await getApprovedSellerProfileId(userId);
 
   const { data: myOrders, error: myOrdersError } = await supabaseAdmin
     .from('booking_requests')
@@ -172,13 +196,13 @@ bookingsRouter.get('/orders', async (request, response) => {
 
   let incomingOrders: unknown[] = [];
 
-  if (sellerProfile) {
+  if (sellerProfileId) {
     const { data, error: incomingError } = await supabaseAdmin
       .from('booking_requests')
       .select(
         'id, start_date, end_date, pickup_location, notes, status, created_at, fleet_listings(name, photos, brand, model), profiles!booking_requests_buyer_id_fkey(full_name, phone)',
       )
-      .eq('seller_profile_id', sellerProfile.id)
+      .eq('seller_profile_id', sellerProfileId)
       .order('created_at', { ascending: false });
 
     if (incomingError) {
@@ -345,6 +369,17 @@ bookingsRouter.patch('/:id/status', async (request, response) => {
   const currentStatus = booking.status as BookingStatus;
   const isSeller = sellerProfile?.user_id === userId;
   const isBuyer = booking.buyer_id === userId;
+
+  if (isSeller) {
+    const { sellerProfileId } = await getApprovedSellerProfileId(userId);
+
+    if (!sellerProfileId) {
+      response.status(403).json({
+        message: 'Your seller application is waiting for admin approval.',
+      });
+      return;
+    }
+  }
 
   let nextStatus: BookingStatus | null = null;
   let notification:

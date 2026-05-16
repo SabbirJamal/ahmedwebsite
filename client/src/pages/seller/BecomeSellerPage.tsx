@@ -18,6 +18,7 @@ export function BecomeSellerPage() {
   const [statusMessage, setStatusMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasPendingApplication, setHasPendingApplication] = useState(false);
 
   useEffect(() => {
     async function loadProfileDefaults() {
@@ -45,6 +46,14 @@ export function BecomeSellerPage() {
         return;
       }
 
+      const { data: sellerProfile } = await supabase
+        .from('seller_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setHasPendingApplication(Boolean(sellerProfile));
+
       setSellerPhone(data?.phone || '');
       setSellerCity(data?.city || '');
     }
@@ -65,9 +74,21 @@ export function BecomeSellerPage() {
           </p>
         </div>
 
-        <form
-          className="seller-panel"
-          onSubmit={async (event) => {
+        {hasPendingApplication ? (
+          <section className="seller-panel pending-seller-panel">
+            <div className="register-heading">
+              <p>Seller Profile</p>
+              <h2>Waiting for approval</h2>
+            </div>
+            <p className="seller-pending-copy">
+              Your seller application has been submitted. The admin will review
+              your company details before seller access is enabled.
+            </p>
+          </section>
+        ) : (
+          <form
+            className="seller-panel"
+            onSubmit={async (event) => {
             event.preventDefault();
             const form = event.currentTarget;
             setErrorMessage('');
@@ -112,8 +133,10 @@ export function BecomeSellerPage() {
                 );
               }
 
-              setStatusMessage('Seller profile created successfully.');
-              navigate('/seller');
+              setStatusMessage(
+                result.message || 'Seller application submitted for admin approval.',
+              );
+              setHasPendingApplication(true);
             } catch (error) {
               setErrorMessage(
                 error instanceof Error
@@ -123,8 +146,8 @@ export function BecomeSellerPage() {
             } finally {
               setIsSubmitting(false);
             }
-          }}
-        >
+            }}
+          >
           <div className="register-heading">
             <p>Seller Profile</p>
             <h2>Company details</h2>
@@ -193,7 +216,8 @@ export function BecomeSellerPage() {
 
           {errorMessage && <p className="form-message error">{errorMessage}</p>}
           {statusMessage && <p className="form-message success">{statusMessage}</p>}
-        </form>
+          </form>
+        )}
       </section>
     </main>
   );
